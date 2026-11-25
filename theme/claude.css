@@ -1,0 +1,516 @@
+/* ============================================================
+   Antigravity · Claude 暖纸主题（严格作用域隔离 + 亮/暗全适配）
+   ------------------------------------------------------------
+   暖纸主画布 + 亚麻暖纸侧边栏 + 陶土橙主题色框（新建对话 & 输入框），
+   全部限定在 html[data-agy-theme="claude"] 之下，绝不串味。
+   ============================================================ */
+
+/* 1. Claude Light Tokens ------------------------------------ */
+html[data-agy-theme="claude"] {
+  --paper: #faf9f5;
+  --paper-side: #eee9de;
+  --paper-elev: #fffdf9;
+  --paper-hover: #f7f3ea;
+  --paper-selected: #f4e4dc;
+  --paper-selected-border: rgba(201, 100, 66, 0.32);
+
+  --ink: #2b2723;
+  --ink-2: #5d564e;
+  --ink-3: #786e62;
+  --line: #e2dacd;
+  --line-strong: #d5cbb9;
+  --side-border: #dcd3c4;
+  --side-sep: rgba(96, 74, 52, 0.11);
+
+  --accent: #c96442;
+  --accent-hover: #b4532f;
+  --accent-strong: #9a3f21;
+  --accent-soft: rgba(201, 100, 66, 0.10);
+  --accent-ring: rgba(201, 100, 66, 0.25);
+
+  /* Claude 陶土暖渐变细框（静止温润、聚焦/悬停亮起） */
+  --claude-edge-soft: linear-gradient(
+    115deg,
+    rgba(201, 100, 66, 0.48) 0%,
+    rgba(217, 138, 92, 0.42) 52%,
+    rgba(176, 126, 86, 0.44) 100%
+  );
+  --claude-edge-focus: linear-gradient(
+    115deg,
+    rgba(201, 100, 66, 0.92) 0%,
+    rgba(222, 125, 76, 0.86) 52%,
+    rgba(186, 108, 66, 0.88) 100%
+  );
+
+  /* 同步自定义控件 --gs-* 令牌 */
+  --gs-bg: var(--paper);
+  --gs-bg-2: var(--paper-side);
+  --gs-side: var(--paper-side);
+  --gs-side-hover: rgba(201, 100, 66, 0.08);
+  --gs-ink: var(--ink);
+  --gs-ink-2: var(--ink-2);
+  --gs-ink-3: var(--ink-3);
+  --gs-line: var(--line);
+  --gs-line-soft: #eee8dc;
+  --gs-accent: var(--accent);
+  --gs-accent-hover: var(--accent-hover);
+  --gs-accent-soft: var(--accent-soft);
+  --gs-accent-ring: var(--accent-ring);
+
+  /* 宿主 token 覆盖 */
+  --background: var(--paper) !important;
+  --bg-canvas: var(--paper) !important;
+  --color-background: var(--paper) !important;
+  --sidebar: var(--paper-side) !important;
+  --color-sidebar: var(--paper-side) !important;
+  --sidebar-secondary: var(--paper-selected) !important;
+  --card: var(--paper-elev) !important;
+  --color-card: var(--paper-elev) !important;
+  --popover: #ffffff !important;
+  --color-popover: #ffffff !important;
+  --popover-foreground: var(--ink) !important;
+  --border: var(--line) !important;
+  --color-border: var(--line) !important;
+  --foreground: var(--ink) !important;
+  --muted-foreground: var(--ink-2) !important;
+  --primary: var(--accent) !important;
+}
+
+/* Claude Dark Tokens（深焙暖炭） */
+html[data-agy-theme="claude"]:has(body.theme-dark),
+html[data-agy-theme="claude"] body.theme-dark {
+  --paper: #1d1b18;
+  --paper-side: #151310;
+  --paper-elev: #25221e;
+  --paper-hover: #2c2823;
+  --paper-selected: #33241d;
+  --paper-selected-border: rgba(224, 130, 97, 0.38);
+
+  --ink: #ece7df;
+  --ink-2: #aea69b;
+  --ink-3: #8d857a;
+  --line: #322e28;
+  --line-strong: #413b33;
+  --side-border: #2c2823;
+  --side-sep: rgba(236, 226, 210, 0.10);
+
+  --accent: #e08261;
+  --accent-hover: #eb9678;
+  --accent-strong: #f3ae95;
+  --accent-soft: rgba(224, 130, 97, 0.14);
+  --accent-ring: rgba(224, 130, 97, 0.32);
+
+  --claude-edge-soft: linear-gradient(
+    115deg,
+    rgba(224, 130, 97, 0.42) 0%,
+    rgba(205, 148, 102, 0.34) 52%,
+    rgba(176, 128, 92, 0.36) 100%
+  );
+  --claude-edge-focus: linear-gradient(
+    115deg,
+    rgba(235, 144, 110, 0.88) 0%,
+    rgba(224, 156, 106, 0.80) 52%,
+    rgba(204, 122, 86, 0.84) 100%
+  );
+
+  --gs-bg: var(--paper);
+  --gs-bg-2: var(--paper-elev);
+  --gs-side: var(--paper-side);
+  --gs-side-hover: rgba(224, 130, 97, 0.10);
+  --gs-ink: var(--ink);
+  --gs-ink-2: var(--ink-2);
+  --gs-ink-3: var(--ink-3);
+  --gs-line: var(--line);
+  --gs-line-soft: #26221d;
+  --gs-accent: var(--accent);
+  --gs-accent-hover: var(--accent-hover);
+  --gs-accent-soft: var(--accent-soft);
+  --gs-accent-ring: var(--accent-ring);
+
+  --background: var(--paper) !important;
+  --bg-canvas: var(--paper) !important;
+  --color-background: var(--paper) !important;
+  --sidebar: var(--paper-side) !important;
+  --color-sidebar: var(--paper-side) !important;
+  --sidebar-secondary: var(--paper-selected) !important;
+  --card: var(--paper-elev) !important;
+  --color-card: var(--paper-elev) !important;
+  --popover: var(--paper-elev) !important;
+  --color-popover: var(--paper-elev) !important;
+  --popover-foreground: var(--ink) !important;
+  --border: var(--line) !important;
+  --color-border: var(--line) !important;
+  --foreground: var(--ink) !important;
+  --muted-foreground: var(--ink-2) !important;
+  --primary: var(--accent) !important;
+}
+
+/* 2. Base --------------------------------------------------- */
+html[data-agy-theme="claude"],
+html[data-agy-theme="claude"] body {
+  background-color: var(--paper) !important;
+  background-image: none !important;
+  color: var(--ink) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-agy-theme="claude"] ::selection {
+  background: rgba(201, 100, 66, 0.20) !important;
+}
+
+html[data-agy-theme="claude"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-agy-theme="claude"] ::-webkit-scrollbar-track { background: transparent; }
+html[data-agy-theme="claude"] ::-webkit-scrollbar-thumb {
+  background: rgba(120, 106, 88, 0.24);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+html[data-agy-theme="claude"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 106, 88, 0.40);
+  background-clip: content-box;
+}
+
+/* 3. Sidebar（亚麻暖纸底 + 分组分割 + 陶土橙左标选中态） ------- */
+html[data-agy-theme="claude"] div[role="navigation"].bg-sidebar,
+html[data-agy-theme="claude"] div[role="navigation"][aria-label="Sidebar"] {
+  background: var(--paper-side) !important;
+  border-right: 1px solid var(--side-border) !important;
+  box-shadow: inset -1px 0 0 rgba(120, 88, 56, 0.05) !important;
+}
+
+html[data-agy-theme="claude"] div[role="navigation"] .bg-sidebar {
+  background: var(--paper-side) !important;
+  background-color: var(--paper-side) !important;
+}
+
+html[data-agy-theme="claude"] div[role="navigation"] [class*="group/section-header"] {
+  background: var(--paper-side) !important;
+  background-color: var(--paper-side) !important;
+  border-top: 1px solid var(--side-sep) !important;
+  margin-top: 8px !important;
+  padding-top: 10px !important;
+}
+
+html[data-agy-theme="claude"] div[role="navigation"].bg-sidebar .text-xs,
+html[data-agy-theme="claude"] div[role="navigation"].bg-sidebar h2,
+html[data-agy-theme="claude"] div[role="navigation"].bg-sidebar span.text-xs {
+  color: var(--ink-3) !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* 侧栏快捷项与插件项 */
+html[data-agy-theme="claude"] div[role="navigation"] button.agy-button-custom,
+html[data-agy-theme="claude"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]) {
+  border-radius: 9px !important;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+html[data-agy-theme="claude"] div[role="navigation"] button.agy-button-custom:hover,
+html[data-agy-theme="claude"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover {
+  background: var(--paper-elev) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 1px 2px rgba(68, 48, 30, 0.07) !important;
+}
+
+/* 会话行 */
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"] {
+  position: relative !important;
+  border: none !important;
+  border-radius: 9px !important;
+  margin: 1.5px 6px !important;
+  padding: 6px 10px !important;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+  --row-bg: var(--paper-side);
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"]::before,
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"]:hover {
+  background: var(--paper-elev) !important;
+  box-shadow: 0 1px 3px rgba(68, 48, 30, 0.07) !important;
+  --row-bg: var(--paper-elev);
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"]:hover span {
+  color: var(--accent) !important;
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"][data-selected="true"],
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary {
+  border: none !important;
+  background: var(--paper-selected) !important;
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--paper-selected-border),
+    0 1px 2px rgba(201, 100, 66, 0.08) !important;
+  --row-bg: var(--paper-selected);
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span {
+  color: var(--accent-strong) !important;
+  font-weight: 600 !important;
+}
+
+html[data-agy-theme="claude"] div[data-testid="conversation-row-sidebar"] .agy-row-actions {
+  background: linear-gradient(to right, transparent 0%, var(--row-bg) 32%) !important;
+}
+
+/* 新建对话：Claude 暖象牙卡 + 常驻陶土橙主题色框（悬停点亮） */
+html[data-agy-theme="claude"] a[data-testid="new-conversation-button"] {
+  position: relative !important;
+  border-radius: 9999px !important;
+  background: var(--paper-elev) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(68, 48, 30, 0.07), 0 3px 10px rgba(201, 100, 66, 0.08) !important;
+  color: var(--accent) !important;
+  font-weight: 600 !important;
+  height: 36px !important;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+}
+
+html[data-agy-theme="claude"] a[data-testid="new-conversation-button"]::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  padding: 1.5px !important;
+  background: var(--claude-edge-soft) !important;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  opacity: 1 !important;
+  transition: background 0.2s ease !important;
+  pointer-events: none !important;
+}
+
+html[data-agy-theme="claude"] a[data-testid="new-conversation-button"]:hover {
+  box-shadow: 0 2px 12px rgba(201, 100, 66, 0.20) !important;
+  transform: translateY(-0.5px);
+}
+
+html[data-agy-theme="claude"] a[data-testid="new-conversation-button"]:hover::before {
+  background: var(--claude-edge-focus) !important;
+}
+
+/* 侧栏底部设置区收口分割 */
+html[data-agy-theme="claude"] div[role="navigation"].bg-sidebar > div:last-child {
+  border-top: 1px solid var(--side-sep) !important;
+}
+
+/* 4. Main surface ------------------------------------------- */
+html[data-agy-theme="claude"] main,
+html[data-agy-theme="claude"] div[class*="bg-background"]:not([role="dialog"]) {
+  background-color: var(--paper) !important;
+}
+
+html[data-agy-theme="claude"] .md-sticky-message-bleed,
+html[data-agy-theme="claude"] div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions) {
+  display: none !important;
+}
+
+/* 5. Composer：Claude 专属陶土暖渐变细框 --------------------- */
+html[data-agy-theme="claude"] .surface-composer {
+  position: relative !important;
+  background: var(--paper-elev) !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 17px !important;
+  box-shadow:
+    0 1px 2px rgba(48, 36, 24, 0.05),
+    0 4px 16px rgba(201, 100, 66, 0.06) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+html[data-agy-theme="claude"] .surface-composer::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  padding: 1.5px !important;
+  background: var(--claude-edge-soft) !important;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+html[data-agy-theme="claude"] .surface-composer:focus-within {
+  box-shadow:
+    0 1px 3px rgba(48, 36, 24, 0.06),
+    0 6px 22px rgba(201, 100, 66, 0.14) !important;
+}
+
+html[data-agy-theme="claude"] .surface-composer:focus-within::after {
+  background: var(--claude-edge-focus) !important;
+}
+
+html[data-agy-theme="claude"] .surface-composer-card {
+  background: var(--paper-elev) !important;
+  border: none !important;
+  border-radius: 15.5px !important;
+  box-shadow: none !important;
+}
+
+html[data-agy-theme="claude"] .surface-composer-card p.pointer-events-none {
+  color: var(--ink-3) !important;
+  opacity: 1 !important;
+}
+
+/* 语音实时钮：暖白底 + 陶土细圈 */
+html[data-agy-theme="claude"] span[data-testid="voice-live-pill"] {
+  background: var(--paper-elev) !important;
+  color: var(--accent) !important;
+  border: 1px solid rgba(201, 100, 66, 0.34) !important;
+  box-shadow: 0 1px 3px rgba(48, 36, 24, 0.06) !important;
+}
+html[data-agy-theme="claude"] span[data-testid="voice-live-pill"]:hover {
+  background: var(--accent-soft) !important;
+  opacity: 1 !important;
+}
+
+/* 麦克风 */
+html[data-agy-theme="claude"] button[data-tooltip-id="input-send-button-record-tooltip"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-agy-theme="claude"] button[data-tooltip-id="input-send-button-record-tooltip"] svg {
+  color: var(--ink-2) !important;
+}
+html[data-agy-theme="claude"] button[data-tooltip-id="input-send-button-record-tooltip"]:hover {
+  background: rgba(120, 100, 80, 0.09) !important;
+}
+
+/* 发送键 */
+html[data-agy-theme="claude"] button[data-testid="input-send-button"],
+html[data-agy-theme="claude"] button[aria-label*="Send"],
+html[data-agy-theme="claude"] button[aria-label*="发送"] {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: 0 1px 3px rgba(201, 100, 66, 0.30) !important;
+  transition: background 0.16s ease !important;
+}
+html[data-agy-theme="claude"] button[data-testid="input-send-button"]:hover,
+html[data-agy-theme="claude"] button[aria-label*="Send"]:hover,
+html[data-agy-theme="claude"] button[aria-label*="发送"]:hover {
+  background: var(--accent-hover) !important;
+}
+
+/* 6. 正文与链接 --------------------------------------------- */
+html[data-agy-theme="claude"] [data-quotable="true"] .markdown-body,
+html[data-agy-theme="claude"] [data-testid="planner-response-text"] {
+  color: var(--ink) !important;
+}
+
+html[data-agy-theme="claude"] a[href^="http"] { color: var(--accent) !important; }
+html[data-agy-theme="claude"] a[href^="http"]:hover { color: var(--accent-hover) !important; }
+
+/* 7. 浮层与设置弹窗（区分亮/暗） ------------------------------ */
+html[data-agy-theme="claude"] [data-radix-popper-content-wrapper],
+html[data-agy-theme="claude"] [role="menu"] {
+  z-index: 999999 !important;
+}
+
+html[data-agy-theme="claude"] body:not(.theme-dark) [role="dialog"],
+html[data-agy-theme="claude"] body:not(.theme-dark) [role="menu"],
+html[data-agy-theme="claude"] body:not(.theme-dark) [role="tooltip"],
+html[data-agy-theme="claude"] body:not(.theme-dark) [role="listbox"],
+html[data-agy-theme="claude"] body:not(.theme-dark) [data-radix-menu-content],
+html[data-agy-theme="claude"] body:not(.theme-dark) [data-radix-tooltip-content],
+html[data-agy-theme="claude"] body:not(.theme-dark) div[data-side][role="tooltip"],
+html[data-agy-theme="claude"] body:not(.theme-dark) div[class*="popover-content"],
+html[data-agy-theme="claude"] body:not(.theme-dark) div[class*="tooltip"],
+html[data-agy-theme="claude"] body:not(.theme-dark) div[class*="dropdown-content"],
+html[data-agy-theme="claude"] body:not(.theme-dark) .settings-modal-container,
+html[data-agy-theme="claude"] body:not(.theme-dark) div[class*="modal-container"] {
+  --background: #ffffff !important;
+  --bg-canvas: #ffffff !important;
+  --color-background: #ffffff !important;
+  --popover: #ffffff !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-agy-theme="claude"] [role="menu"],
+html[data-agy-theme="claude"] [role="listbox"],
+html[data-agy-theme="claude"] [data-radix-menu-content],
+html[data-agy-theme="claude"] div[class*="dropdown-content"],
+html[data-agy-theme="claude"] div[class*="popover-content"] {
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 6px rgba(40, 30, 20, 0.05), 0 12px 32px rgba(40, 30, 20, 0.11) !important;
+}
+
+html[data-agy-theme="claude"] [role="menuitem"]:hover,
+html[data-agy-theme="claude"] [role="menuitemradio"]:hover,
+html[data-agy-theme="claude"] [role="menuitem"][data-highlighted],
+html[data-agy-theme="claude"] [role="menuitemradio"][data-highlighted] {
+  background: var(--paper-hover) !important;
+}
+
+html[data-agy-theme="claude"] [role="tooltip"],
+html[data-agy-theme="claude"] [data-radix-tooltip-content],
+html[data-agy-theme="claude"] div[data-side][role="tooltip"],
+html[data-agy-theme="claude"] div[class*="tooltip"] {
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(40, 30, 20, 0.10) !important;
+  z-index: 99999999 !important;
+}
+
+html[data-agy-theme="claude"] [role="tooltip"] *,
+html[data-agy-theme="claude"] [data-radix-tooltip-content] * {
+  color: var(--ink) !important;
+}
+
+html[data-agy-theme="claude"] [role="dialog"],
+html[data-agy-theme="claude"] .settings-modal-container {
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(40, 30, 20, 0.08), 0 32px 80px rgba(40, 30, 20, 0.16) !important;
+  z-index: 99999 !important;
+}
+
+html[data-agy-theme="claude"] .settings-modal-container aside,
+html[data-agy-theme="claude"] .settings-modal-container div[class*="sidebar"],
+html[data-agy-theme="claude"] .agy-dialog aside,
+html[data-agy-theme="claude"] .agy-dialog div[class*="sidebar"] {
+  background: var(--paper-side) !important;
+  background-color: var(--paper-side) !important;
+  border-right: 1px solid var(--side-border) !important;
+}
+
+html[data-agy-theme="claude"] .settings-modal-container [aria-checked="true"],
+html[data-agy-theme="claude"] .settings-modal-container [data-state="checked"][class*="border"] {
+  border-color: var(--accent) !important;
+  background: rgba(201, 100, 66, 0.06) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+html[data-agy-theme="claude"] button[role="switch"][data-state="checked"],
+html[data-agy-theme="claude"] button[role="switch"][aria-checked="true"] {
+  background: var(--accent) !important;
+}
+
+html[data-agy-theme="claude"] div[data-state="open"].fixed.inset-0:not([role="dialog"]),
+html[data-agy-theme="claude"] div[class*="backdrop"] {
+  background: rgba(40, 32, 22, 0.28) !important;
+}
+
+html[data-agy-theme="claude"] *:focus-visible {
+  outline-color: var(--accent-ring) !important;
+}

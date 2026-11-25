@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="9.25" stroke="#4285F4" stroke-opacity="0.22" stroke-width="1.75"/>
+  <path d="M12 2.75A9.25 9.25 0 1 1 3.52 15.7" stroke="url(#pulseGrad)" stroke-width="1.85" stroke-linecap="round"/>
+  <path d="M12 6.8C12.35 9.45 14.55 11.65 17.2 12C14.55 12.35 12.35 14.55 12 17.2C11.65 14.55 9.45 12.35 6.8 12C9.45 11.65 11.65 9.45 12 6.8Z" fill="url(#starGrad)"/>
+  <defs>
+    <linearGradient id="pulseGrad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4285F4"/>
+      <stop offset="48%" stop-color="#EA4335"/>
+      <stop offset="78%" stop-color="#FBBC04"/>
+      <stop offset="100%" stop-color="#34A853"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="7" y1="7" x2="17" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4285F4"/>
+      <stop offset="100%" stop-color="#1A73E8"/>
+    </linearGradient>
+  </defs>
+</svg>

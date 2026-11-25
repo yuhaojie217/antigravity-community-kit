@@ -1,0 +1,19 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "gemini-pulse",
+  "displayName": "Gemini Pulse · 额度与上下文",
+  "version": "1.0.0",
+  "description": "实时查看 Gemini 各模型配额池余量、重置倒计时、当前会话上下文窗口构成及 7 日用量趋势。",
+  "logo": "assets/logo.svg",
+  "license": "MIT",
+  "keywords": [
+    "gemini",
+    "quota",
+    "context-window",
+    "telemetry",
+    "sidecar"
+  ],
+  "suggestedPrompts": [
+    "查看当前 Gemini 模型额度与上下文占用"
+  ]
+}

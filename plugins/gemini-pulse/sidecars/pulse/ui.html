@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="zh-CN" data-surface="google">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>额度与上下文 · Gemini Pulse</title>
+  <style>
+    /* ==========================================================================
+       Gemini Pulse · Editorial Precision Inspector
+       Aligned with Hakimi Google Dawn (#fbfdff), Claude Paper (#faf9f5) & Dark (#101418)
+       ========================================================================== */
+    :root,
+    html[data-surface="google"] {
+      --bg: #fbfdff;
+      --surface: #ffffff;
+      --surface-subtle: #f4f8fd;
+      --ink: #1b1f24;
+      --ink-secondary: #525866;
+      --ink-muted: #7b8394;
+      --line: #e3e8ef;
+      --line-subtle: #eef2f7;
+      --accent: #1a73e8;
+      --accent-soft: rgba(26, 115, 232, 0.09);
+      --accent-ring: rgba(26, 115, 232, 0.24);
+      --good: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(26, 115, 232, 0.04);
+      --shadow-pop: 0 8px 24px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+
+      /* Context segment palette */
+      --seg-tools: #0d9488;
+      --seg-messages: #2563eb;
+      --seg-system: #d97706;
+      --seg-rules: #64748b;
+      --seg-thinking: #7c3aed;
+      --seg-track: #edf1f7;
+    }
+
+    html[data-surface="claude"] {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --surface-subtle: #f3f0e8;
+      --ink: #292724;
+      --ink-secondary: #5c5953;
+      --ink-muted: #858179;
+      --line: #e6e2d8;
+      --line-subtle: #f0ece3;
+      --accent: #c96442;
+      --accent-soft: rgba(201, 100, 66, 0.10);
+      --accent-ring: rgba(201, 100, 66, 0.26);
+      --shadow-sm: 0 1px 2px rgba(41, 39, 36, 0.04), 0 4px 12px rgba(41, 39, 36, 0.04);
+      --seg-messages: #c96442;
+      --seg-tools: #2f855a;
+      --seg-thinking: #805ad5;
+      --seg-system: #b7791f;
+      --seg-rules: #718096;
+      --seg-track: #ede9df;
+    }
+
+    html[data-surface="dark"] {
+      --bg: #101418;
+      --surface: #161b22;
+      --surface-subtle: #1c222b;
+      --ink: #e8edf4;
+      --ink-secondary: #9ba4b2;
+      --ink-muted: #6e7785;
+      --line: #262e38;
+      --line-subtle: #1d242d;
+      --accent: #7cacf8;
+      --accent-soft: rgba(124, 172, 248, 0.12);
+      --accent-ring: rgba(124, 172, 248, 0.30);
+      --good: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
+      --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.45);
+      --seg-tools: #2dd4bf;
+      --seg-messages: #60a5fa;
+      --seg-system: #fbbf24;
+      --seg-rules: #94a3b8;
+      --seg-thinking: #a78bfa;
+      --seg-track: #222933;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    ::selection {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(120, 130, 145, 0.22);
+      border-radius: 99px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(120, 130, 145, 0.38);
+      background-clip: content-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 12.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      font-variant-numeric: tabular-nums;
+      min-height: 100vh;
+    }
+
+    button, select {
+      font: inherit;
+      color: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+
+    button:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent-ring);
+      outline-offset: 1px;
+    }
+
+    /* Sticky Top Control Strip */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .session-picker {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.14);
+      transition: background 0.2s ease;
+    }
+    .live-dot.offline {
+      background: var(--warn);
+      box-shadow: none;
+    }
+
+    .conv-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 24px 4px 9px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      max-width: 100%;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b8394' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+      transition: border-color 0.16s ease;
+    }
+    .conv-select:hover { border-color: var(--ink-muted); }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .seg-tabs {
+      display: inline-flex;
+      background: var(--surface-subtle);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .seg-tab {
+      border: none;
+      background: transparent;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+    .seg-tab:hover { color: var(--ink); }
+    .seg-tab.active {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .icon-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .icon-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent-ring);
+      background: var(--accent-soft);
+    }
+    .icon-btn svg { width: 13.5px; height: 13.5px; }
+    .icon-btn.spinning svg { animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Main Content Container */
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 14px 14px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .panel-block {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 15px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sec-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 11px;
+    }
+
+    .sec-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sec-meta {
+      font-size: 11.5px;
+      color: var(--ink-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cap-pill {
+      border: 1px solid var(--line);
+      background: var(--surface-subtle);
+      color: var(--ink-secondary);
+      border-radius: 99px;
+      padding: 1px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .cap-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Context Window Headline & Segmented Proportional Bar */
+    .ctx-headline {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+
+    .ctx-primary-num {
+      font-size: 21px;
+      font-weight: 650;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+    }
+
+    .ctx-primary-num small {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      margin-left: 3px;
+    }
+
+    .ctx-rem-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .ctx-rem-badge.warn { color: var(--warn); }
+    .ctx-rem-badge.danger { color: var(--danger); }
+
+    .seg-bar-track {
+      height: 9px;
+      width: 100%;
+      background: var(--seg-track);
+      border-radius: 99px;
+      overflow: hidden;
+      display: flex;
+      gap: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .seg-piece {
+      height: 100%;
+      min-width: 2px;
+      transition: width 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, filter 0.18s ease;
+    }
+    .seg-bar-track.dimming .seg-piece:not(.active) {
+      opacity: 0.28;
+    }
+    .seg-bar-track.dimming .seg-piece.active {
+      filter: brightness(1.06);
+    }
+
+    .legend-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 4px 16px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3.5px 6px;
+      margin: 0 -6px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: default;
+      transition: background 0.14s ease;
+    }
+    .legend-row:hover {
+      background: var(--surface-subtle);
+    }
+
+    .legend-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink-secondary);
+      min-width: 0;
+    }
+
+    .swatch {
+      width: 7.5px;
+      height: 7.5px;
+      border-radius: 2.5px;
+      flex-shrink: 0;
+    }
+
+    .legend-val {
+      color: var(--ink);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .legend-val em {
+      font-style: normal;
+      color: var(--ink-muted);
+      font-weight: 400;
+      margin-left: 4px;
+      font-size: 11px;
+    }
+
+    /* Inline 3-column Vital Strip */
+    .vital-strip {
+      margin-top: 12px;
+      padding-top: 11px;
+      border-top: 1px solid var(--line-subtle);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .vital-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .vital-label {
+      font-size: 11px;
+      color: var(--ink-muted);
+    }
+
+    .vital-num {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    /* Quota Pools Ledger */
+    .quota-list {
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .quota-pool {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line-subtle);
+    }
+    .quota-pool:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .pool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pool-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pool-tag {
+      font-size: 10.5px;
+      font-weight: 500;
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .bucket-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bucket-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 11.5px;
+    }
+
+    .bucket-kind { color: var(--ink-secondary); }
+    .bucket-stat { font-weight: 500; color: var(--ink); }
+    .bucket-stat span { color: var(--ink-muted); font-weight: 400; margin-left: 6px; font-size: 11px; }
+
+    .meter-track {
+      height: 5.5px;
+      width: 100%;
+      background: var(--seg-track);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--accent);
+      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+    }
+    .meter-fill.warn { background: var(--warn); }
+    .meter-fill.danger { background: var(--danger); }
+
+    .quota-empty {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--surface-subtle);
+      color: var(--ink-secondary);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    /* Recent Step Stream Table */
+    .table-scroll {
+      overflow-x: auto;
+      margin: 0 -4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    th {
+      text-align: right;
+      font-weight: 500;
+      color: var(--ink-muted);
+      padding: 5px 6px 7px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { text-align: left; }
+
+    td {
+      text-align: right;
+      padding: 6px 6px;
+      border-bottom: 1px solid var(--line-subtle);
+      color: var(--ink-secondary);
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface-subtle); color: var(--ink); }
+
+    .step-num { font-weight: 600; color: var(--ink); }
+    .mod-tag {
+      color: var(--ink-muted);
+      font-size: 11px;
+      margin-left: 5px;
+    }
+
+    /* 7-Day Trend View */
+    .chart-box {
+      padding: 6px 0 2px;
+    }
+
+    .bars-grid {
+      height: 132px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      align-items: end;
+      padding-top: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .day-col {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+
+    .stack-col {
+      width: 100%;
+      max-width: 28px;
+      border-radius: 5px 5px 2px 2px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      background: var(--seg-track);
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+    .day-col:hover .stack-col { transform: translateY(-2px); }
+
+    .st-cache { background: var(--seg-tools); opacity: 0.85; }
+    .st-in { background: var(--seg-messages); }
+    .st-out { background: var(--seg-thinking); }
+
+    .day-lbl {
+      font-size: 11px;
+      color: var(--ink-muted);
+      padding-top: 5px;
+    }
+    .day-val-top {
+      font-size: 10.5px;
+      color: var(--ink-secondary);
+      min-height: 15px;
+    }
+
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .rank-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .rank-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .rank-name { font-weight: 500; color: var(--ink); }
+    .rank-tok { color: var(--ink-secondary); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="session-picker">
+      <span class="live-dot" id="liveDot" title="本地实时遥测已连接"></span>
+      <select class="conv-select" id="convSelect" aria-label="选择监控会话">
+        <option value="auto">自动跟随活跃对话</option>
+      </select>
+    </div>
+    <div class="top-actions">
+      <div class="seg-tabs" role="tablist">
+        <button type="button" class="seg-tab active" data-tab="live" role="tab">实时</button>
+        <button type="button" class="seg-tab" data-tab="trend" role="tab">7日</button>
+      </div>
+      <button type="button" class="icon-btn" id="refreshBtn" title="刷新模型配额与会话数据">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- TAB 1: LIVE INSPECTOR -->
+    <div id="tabLive" style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Section A: Context Window -->
+      <section class="panel-block">
+        <div class="sec-head">
+          <h2 class="sec-title">
+            上下文窗口
+            <span id="activeModelBadge" class="pool-tag">Gemini</span>
+          </h2>
+          <div class="sec-meta">
+            <button type="button" class="cap-pill" id="capModeBtn" title="点击在「自动压缩阈值 512K」与「模型物理上限 1M」之间切换">
+              压缩线 512K
+            </button>
+          </div>
+        </div>
+
+        <div class="ctx-headline">
+          <div class="ctx-primary-num" id="ctxMainNum">
+            -- <small>/ 512K</small>
+          </div>
+          <div class="ctx-rem-badge" id="ctxRemBadge">剩余 --%</div>
+        </div>
+
+        <div class="seg-bar-track" id="segBarTrack"></div>
+        <div class="legend-list" id="legendList"></div>
+
+        <div class="vital-strip">
+          <div class="vital-item">
+            <span class="vital-label">生成速率</span>
+            <span class="vital-num" id="vitalSpeed">-- tok/s</span>
+          </div>
+          <div class="vital-item">
+            <span class="vital-label">缓存命中 (总 / 新)</span>
+            <span class="vital-num" id="vitalCache">--%</span>
+          </div>
+          <div class="vital-item">
+            <span class="vital-label">本轮累计吞吐</span>
+            <span class="vital-num" id="vitalCum">--</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Quota Pools -->
+      <section class="panel-block">
+        <div class="sec-head">
+          <h2 class="sec-title">模型配额池</h2>
+          <span class="sec-meta" id="quotaStatusMeta">实时同步</span>
+        </div>
+        <div class="quota-list" id="quotaList">
+          <div class="quota-empty">正在读取配额池状态…</div>
+        </div>
+      </section>
+
+      <!-- Section C: Recent Steps -->
+      <section class="panel-block">
+        <div class="sec-head">
+          <h2 class="sec-title">最近推理步骤</h2>
+          <span class="sec-meta" id="turnsMeta">- 轮 · - 步</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>步序 / 模型</th>
+                <th>上下文</th>
+                <th>输出</th>
+                <th>缓存命中</th>
+                <th>速率</th>
+              </tr>
+            </thead>
+            <tbody id="stepsTbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:14px 0;">暂无步骤记录</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: 7-DAY TREND -->
+    <div id="tabTrend" class="hidden" style="display:flex;flex-direction:column;gap:14px;">
+      <section class="panel-block">
+        <div class="sec-head">
+          <h2 class="sec-title">近 7 日 Token 脉络</h2>
+          <span class="sec-meta" id="trendTotalMeta">总计 --</span>
+        </div>
+        <div class="chart-box">
+          <div class="bars-grid" id="barsGrid"></div>
+          <div id="barLabels" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;text-align:center;"></div>
+        </div>
+        <div class="vital-strip" style="margin-top:14px;">
+          <div class="vital-item">
+            <span class="vital-label">7 日总吞吐</span>
+            <span class="vital-num" id="t7Total">--</span>
+          </div>
+          <div class="vital-item">
+            <span class="vital-label">7 日总输出</span>
+            <span class="vital-num" id="t7Out">--</span>
+          </div>
+          <div class="vital-item">
+            <span class="vital-label">平均缓存复用</span>
+            <span class="vital-num" id="t7Cache">--%</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-block">
+        <div class="sec-head">
+          <h2 class="sec-title">模型消耗构成</h2>
+          <span class="sec-meta">近 7 日占比</span>
+        </div>
+        <div class="rank-list" id="modelRankList"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const SEG_COLORS = {
+      tools: "var(--seg-tools)",
+      messages: "var(--seg-messages)",
+      system: "var(--seg-system)",
+      rules: "var(--seg-rules)",
+      thinking: "var(--seg-thinking)"
+    };
+
+    const SURFACES = ["google", "claude", "dark"];
+    const convSelect = document.getElementById("convSelect");
+    const capModeBtn = document.getElementById("capModeBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const liveDot = document.getElementById("liveDot");
+
+    let latestData = null;
+    let es = null;
+    let streamActive = true;
+
+    function applySurface(mode) {
+      const sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const resolved = SURFACES.includes(mode) ? mode : (sysDark ? "dark" : "google");
+      document.documentElement.setAttribute("data-surface", resolved);
+    }
+
+    applySurface(new URLSearchParams(location.search).get("theme"));
+
+    // Tab switching
+    document.querySelectorAll(".seg-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".seg-tab").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const isLive = btn.dataset.tab === "live";
+        document.getElementById("tabLive").classList.toggle("hidden", !isLive);
+        document.getElementById("tabTrend").classList.toggle("hidden", isLive);
+      });
+    });
+
+    function fmtTok(n) {
+      const v = Number(n || 0);
+      if (v >= 1000000) return (v / 1000000).toFixed(v >= 10000000 ? 1 : 2).replace(/\.00$/, "") + "M";
+      if (v >= 1000) return (v / 1000).toFixed(v >= 100000 ? 0 : 1).replace(/\.0$/, "") + "K";
+      return String(v);
+    }
+
+    function fmtDurationSec(sec) {
+      if (sec === null || sec === undefined || sec < 0) return "";
+      const d = Math.floor(sec / 86400);
+      const h = Math.floor((sec % 86400) / 3600);
+      const m = Math.max(1, Math.floor((sec % 3600) / 60));
+      if (d > 0) return `${d}天${h}小时后重置`;
+      if (h > 0) return `${h}小时${m}分后重置`;
+      return `${m}分钟后重置`;
+    }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function quotaRow(label, bucket) {
+      const remaining = bucket?.remainingPct;
+      const hasValue = Number.isFinite(remaining);
+      const reset = bucket?.resetInSec ? fmtDurationSec(bucket.resetInSec) : "";
+      const level = remaining <= 15 ? "danger" : remaining <= 35 ? "warn" : "";
+      const status = hasValue ? `剩余 ${remaining}%` : bucket?.disabled ? "暂不可用" : "宿主未提供";
+      return `<div class="bucket-row">
+        <div class="bucket-meta"><span class="bucket-kind">${label}</span>
+          <span class="bucket-stat">${status}${reset ? `<span>${escapeHtml(reset)}</span>` : ""}</span></div>
+        ${hasValue ? `<div class="meter-track"><div class="meter-fill ${level}" style="width:${remaining}%"></div></div>` : ""}
+      </div>`;
+    }
+
+    function renderQuotaSection(quota, metrics) {
+      const container = document.getElementById("quotaList");
+      const metaEl = document.getElementById("quotaStatusMeta");
+      const pools = quota?.pools || [];
+
+      metaEl.textContent = quota?.stale && pools.length ? "上次同步的数据" :
+        pools.length ? quota.account || "官方配额池" : "等待同步";
+
+      if (pools.length === 0) {
+        const activeLabel = metrics?.activeModelLabel || "Gemini";
+        container.innerHTML = `
+          <div class="quota-empty">
+            <div>
+              <div style="font-weight:600;color:var(--ink);margin-bottom:2px;">当前使用：${escapeHtml(activeLabel)}</div>
+              <div style="font-size:11.5px;color:var(--ink-muted);">暂未取得模型额度，可点右上角刷新。</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const activeKey = quota?.activePool?.key || "";
+      container.innerHTML = pools.map((p) => {
+        const isCurrent = p.key === activeKey;
+        return `
+          <div class="quota-pool">
+            <div class="pool-header">
+              <span class="pool-name">
+                ${escapeHtml(p.label)}
+                ${isCurrent ? `<span class="pool-tag">当前会话</span>` : ""}
+              </span>
+            </div>
+            ${quotaRow("5 小时滚动额度", p.window5h)}
+            ${quotaRow("每周总额度", p.windowWeekly)}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderContextAndSteps(data) {
+      const m = data.metrics;
+      if (!m) return;
+
+      document.getElementById("activeModelBadge").textContent = m.activeModelLabel || "Gemini";
+      const isCompact = (data.settings?.capMode || "compact") === "compact";
+      capModeBtn.textContent = isCompact
+        ? `压缩阈值 ${fmtTok(m.compactCap)}`
+        : `物理窗口 ${fmtTok(m.physicalCap)}`;
+      capModeBtn.title = `当前按${isCompact ? "自动压缩阈值" : "底层模型物理窗口"}计算占比（点击切换；物理窗口 ${fmtTok(m.physicalCap)} / 压缩线 ${fmtTok(m.compactCap)}）`;
+
+      document.getElementById("ctxMainNum").innerHTML =
+        `${fmtTok(m.latestContextTokens)} <small>/ ${fmtTok(m.contextLimit)}</small>`;
+
+      const remEl = document.getElementById("ctxRemBadge");
+      remEl.textContent = `已用 ${m.contextPct}% · 剩余 ${m.remainingPct}%`;
+      remEl.className = "ctx-rem-badge" + (m.contextPct >= 82 ? " danger" : (m.contextPct >= 60 ? " warn" : ""));
+
+      const track = document.getElementById("segBarTrack");
+      const legend = document.getElementById("legendList");
+      const bList = m.breakdown || [];
+
+      if (bList.length > 0 && m.contextLimit > 0) {
+        track.innerHTML = bList.map((b) => {
+          const widthOfCap = Math.max(0.6, (b.tokens / m.contextLimit) * 100);
+          return `<div class="seg-piece" data-key="${b.key}" style="width:${widthOfCap.toFixed(2)}%;background:${SEG_COLORS[b.key] || "var(--accent)"}" title="${escapeHtml(b.label)}: ${fmtTok(b.tokens)}"></div>`;
+        }).join("");
+
+        legend.innerHTML = bList.map((b) => `
+          <div class="legend-row" data-key="${b.key}">
+            <span class="legend-left">
+              <span class="swatch" style="background:${SEG_COLORS[b.key] || "var(--accent)"}"></span>
+              <span>${escapeHtml(b.label)}</span>
+            </span>
+            <span class="legend-val">${fmtTok(b.tokens)}<em>${b.pct}%</em></span>
+          </div>
+        `).join("");
+
+        // Interactive hover highlight between legend and segmented bar
+        legend.querySelectorAll(".legend-row").forEach((row) => {
+          const key = row.dataset.key;
+          row.addEventListener("mouseenter", () => {
+            track.classList.add("dimming");
+            track.querySelectorAll(".seg-piece").forEach((p) => p.classList.toggle("active", p.dataset.key === key));
+          });
+          row.addEventListener("mouseleave", () => {
+            track.classList.remove("dimming");
+            track.querySelectorAll(".seg-piece").forEach((p) => p.classList.remove("active"));
+          });
+        });
+      } else {
+        track.innerHTML = "";
+        legend.innerHTML = "";
+      }
+
+      const rate = m.latestStepTokPerSec > 0 ? m.latestStepTokPerSec : m.avgTokPerSec;
+      document.getElementById("vitalSpeed").textContent = (rate > 0 ? rate.toFixed(1) : "--") + " tok/s";
+      document.getElementById("vitalCache").textContent = `${Math.round(m.avgCacheHitPct)}% / ${Math.round(m.latestCacheHitPct)}%`;
+      document.getElementById("vitalCum").textContent = fmtTok(m.cumulativeTokens);
+
+      document.getElementById("turnsMeta").textContent = `${m.turns} 轮对话 · ${m.steps} 步推理`;
+
+      const steps = m.recentSteps || [];
+      const tbody = document.getElementById("stepsTbody");
+      if (steps.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:14px 0;">暂无推理步骤</td></tr>`;
+      } else {
+        tbody.innerHTML = steps.map((s) => `
+          <tr>
+            <td><span class="step-num">#${s.step}</span><span class="mod-tag">${escapeHtml(s.modelShort.replace(/^Gemini\s+/i, ""))}</span></td>
+            <td>${fmtTok(s.contextTokens)}</td>
+            <td>${fmtTok(s.outputTokens)}</td>
+            <td>${Math.round(s.cacheHitPct)}%</td>
+            <td>${s.tokPerSec > 0 ? s.tokPerSec + " t/s" : "-"}</td>
+          </tr>
+        `).join("");
+      }
+    }
+
+    function renderTrend7d(trend) {
+      if (!trend) return;
+      const days = trend.days || [];
+      const maxDay = Math.max(1, ...days.map((d) => d.total));
+      document.getElementById("trendTotalMeta").textContent = `近 7 日共 ${fmtTok(trend.totals?.tokens || 0)}`;
+      document.getElementById("t7Total").textContent = fmtTok(trend.totals?.tokens || 0);
+      document.getElementById("t7Out").textContent = fmtTok(trend.totals?.output || 0);
+      document.getElementById("t7Cache").textContent = (trend.totals?.cacheHitPct ?? 0) + "%";
+
+      document.getElementById("barsGrid").innerHTML = days.map((d) => {
+        const hPct = d.total > 0 ? Math.max(6, (d.total / maxDay) * 96) : 3;
+        const cPct = d.total > 0 ? (d.cache / d.total) * 100 : 0;
+        const iPct = d.total > 0 ? (d.input / d.total) * 100 : 0;
+        const oPct = Math.max(0, 100 - cPct - iPct);
+        return `
+          <div class="day-col" title="${d.date} · 总计 ${fmtTok(d.total)}（缓存 ${fmtTok(d.cache)} / 新增输入 ${fmtTok(d.input)} / 输出 ${fmtTok(d.output)}）">
+            <span class="day-val-top">${d.total > 0 ? fmtTok(d.total) : ""}</span>
+            <div class="stack-col" style="height:${hPct.toFixed(1)}px">
+              <div class="st-cache" style="height:${cPct.toFixed(1)}%"></div>
+              <div class="st-in" style="height:${iPct.toFixed(1)}%"></div>
+              <div class="st-out" style="height:${oPct.toFixed(1)}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("barLabels").innerHTML = days.map((d) =>
+        `<span class="day-lbl">${escapeHtml(d.label)}</span>`
+      ).join("");
+
+      const rankEl = document.getElementById("modelRankList");
+      const models = trend.models || [];
+      rankEl.innerHTML = models.length === 0
+        ? `<div class="quota-empty">近 7 日暂无记录</div>`
+        : models.map((m) => `
+          <div class="rank-row">
+            <div class="rank-head">
+              <span class="rank-name">${escapeHtml(m.label)}</span>
+              <span class="rank-tok">${fmtTok(m.total)} · ${m.sharePct}%</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" style="width:${Math.max(2, m.sharePct)}%"></div>
+            </div>
+          </div>
+        `).join("");
+    }
+
+    function renderAll(data) {
+      if (!data) return;
+      latestData = data;
+
+      // Populate conversation selector preserving selection
+      const curVal = convSelect.value;
+      const activeTitle = data.activeTitle || (data.activeConversationId ? data.activeConversationId.slice(0, 8) : "当前会话");
+      const opts = [`<option value="auto">自动跟随（${escapeHtml(activeTitle.slice(0, 22))}）</option>`];
+      for (const c of data.conversations || []) {
+        const lbl = c.title ? c.title.slice(0, 26) : c.id.slice(0, 8);
+        opts.push(`<option value="${escapeHtml(c.id)}">${escapeHtml(lbl)}</option>`);
+      }
+      convSelect.innerHTML = opts.join("");
+      if ([...convSelect.options].some((o) => o.value === curVal)) convSelect.value = curVal;
+
+      renderContextAndSteps(data);
+      renderQuotaSection(data.quota, data.metrics);
+      renderTrend7d(data.trend7d);
+    }
+
+    function disconnectStream() {
+      if (es) { try { es.close(); } catch {} es = null; }
+      liveDot.classList.add("offline");
+    }
+
+    function connectStream() {
+      disconnectStream();
+      if (!streamActive) return;
+      const conv = encodeURIComponent(convSelect.value || "auto");
+      es = new EventSource(`/api/events?conv=${conv}`);
+      es.onopen = () => liveDot.classList.remove("offline");
+      es.onmessage = (evt) => {
+        liveDot.classList.remove("offline");
+        try { renderAll(JSON.parse(evt.data)); } catch {}
+      };
+      es.onerror = () => {
+        liveDot.classList.add("offline");
+      };
+    }
+
+    convSelect.addEventListener("change", connectStream);
+
+    capModeBtn.addEventListener("click", async () => {
+      const cur = latestData?.settings?.capMode || "compact";
+      const next = cur === "compact" ? "physical" : "compact";
+      try {
+        const res = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ capMode: next, conv: convSelect.value || "auto" })
+        });
+        const j = await res.json();
+        if (j?.payload) renderAll(j.payload);
+      } catch {}
+    });
+
+    refreshBtn.addEventListener("click", async () => {
+      refreshBtn.classList.add("spinning");
+      try {
+        const conv = encodeURIComponent(convSelect.value || "auto");
+        const res = await fetch(`/api/metrics?conv=${conv}&refresh=1`);
+        const j = await res.json();
+        renderAll(j);
+      } catch {} finally {
+        setTimeout(() => refreshBtn.classList.remove("spinning"), 350);
+      }
+    });
+
+    // Keyboard events in the embedded panel do not bubble into the host window.
+    window.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented || window.parent === window) return;
+      window.parent.postMessage("gemini-pulse:close", "*");
+    });
+
+    // Sync theme and pause/resume SSE when the host drawer opens or closes.
+    window.addEventListener("message", (event) => {
+      if (event.source !== window.parent || !event.data || typeof event.data !== "object") return;
+      if (event.data.type === "gemini-pulse:surface") {
+        applySurface(event.data.surface);
+      } else if (event.data.type === "gemini-pulse:active") {
+        const nextActive = Boolean(event.data.active);
+        if (nextActive === streamActive && (nextActive ? Boolean(es) : !es)) return;
+        streamActive = nextActive;
+        if (streamActive) connectStream();
+        else disconnectStream();
+      }
+    });
+
+    connectStream();
+  </script>
+</body>
+</html>

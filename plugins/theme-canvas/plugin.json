@@ -1,0 +1,17 @@
+{
+  "name": "theme-canvas",
+  "displayName": "Theme Canvas · 主题与汉化管理",
+  "version": "2.0.0",
+  "description": "Antigravity 三主题隔离皮肤（Google 晨曦 / Claude 暖纸 / Default 极简）与增量汉化维护技能，支持一键检查、防升级重注与无损还原。",
+  "author": {
+    "name": "Antigravity Community"
+  },
+  "license": "MIT",
+  "keywords": [
+    "theme",
+    "localization",
+    "claude",
+    "google",
+    "chinese"
+  ]
+}

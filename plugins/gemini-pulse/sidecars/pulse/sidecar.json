@@ -1,0 +1,10 @@
+{
+  "command": "node",
+  "args": [
+    "server.mjs"
+  ],
+  "restart_policy": "always",
+  "display_name": "额度与上下文",
+  "description": "后台提供 Gemini 配额池余量、上下文窗口构成与 7 日用量数据服务。",
+  "has_web_ui": false
+}

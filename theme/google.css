@@ -1,0 +1,664 @@
+/* ============================================================
+   Antigravity · 哈基米 Google 晨曦皮肤（严格作用域隔离版）
+   ------------------------------------------------------------
+   所有 Google 视觉样式均限定在 html[data-agy-theme="google"]
+   （及启动未初始化前的 html:not([data-agy-theme]) 防闪白）之下，
+   切换到 Claude 或 Default(off) 时 100% 退场，绝不跨主题串味。
+
+   保留历史避坑约定：
+     - 弹窗/浮层实底与高 z-index（防双重曝光与被遮挡）
+     - 侧边栏不做 GPU 合成层隔离（防下拉菜单被裁切）
+     - Tab 关闭按钮始终可点
+   ============================================================ */
+
+/* 1. Google Tokens ------------------------------------------ */
+:root:not([data-agy-theme]),
+html[data-agy-theme="google"] {
+  /* 主画布与侧边栏拉开清晰舒适的冷雾蓝灰色阶 */
+  --gs-bg: #fbfdff;
+  --gs-bg-2: #f3f7fd;
+  --gs-side: #eef3fa;
+  --gs-side-elev: #ffffff;
+  --gs-side-hover: rgba(26, 115, 232, 0.08);
+  --gs-side-border: #d8e2f0;
+  --gs-side-sep: rgba(26, 56, 102, 0.09);
+  --gs-row-selected: #dfebfc;
+  --gs-row-selected-border: rgba(26, 115, 232, 0.30);
+
+  --gs-ink: #1b1f24;
+  --gs-ink-2: #525d6d;
+  --gs-ink-3: #64748b;
+
+  --gs-line: #dde5f0;
+  --gs-line-soft: #e8eef6;
+
+  /* Google 官方四色 */
+  --gs-blue: #4285F4;
+  --gs-red: #EA4335;
+  --gs-yellow: #FBBC04;
+  --gs-green: #34A853;
+
+  /* 主色 */
+  --gs-accent: #1a73e8;
+  --gs-accent-hover: #155fc2;
+  --gs-accent-strong: #124eb3;
+  --gs-accent-soft: rgba(26, 115, 232, 0.10);
+  --gs-accent-ring: rgba(26, 115, 232, 0.26);
+
+  /* 四色细渐变：静止柔和、聚焦/悬停点亮 */
+  --gs-quad-soft: linear-gradient(
+    115deg,
+    rgba(66, 133, 244, 0.58) 0%,
+    rgba(234, 67, 53, 0.48) 33%,
+    rgba(245, 178, 12, 0.54) 66%,
+    rgba(52, 168, 83, 0.50) 100%
+  );
+  --gs-quad: linear-gradient(
+    115deg,
+    rgba(66, 133, 244, 0.94) 0%,
+    rgba(234, 67, 53, 0.86) 33%,
+    rgba(245, 178, 12, 0.90) 66%,
+    rgba(52, 168, 83, 0.88) 100%
+  );
+
+  /* 宿主 token 覆盖 */
+  --background: var(--gs-bg) !important;
+  --bg-canvas: var(--gs-bg) !important;
+  --color-background: var(--gs-bg) !important;
+  --sidebar: var(--gs-side) !important;
+  --color-sidebar: var(--gs-side) !important;
+  --sidebar-secondary: var(--gs-row-selected) !important;
+  --card: #ffffff !important;
+  --color-card: #ffffff !important;
+  --popover: #ffffff !important;
+  --color-popover: #ffffff !important;
+  --popover-foreground: var(--gs-ink) !important;
+  --border: var(--gs-line) !important;
+  --color-border: var(--gs-line) !important;
+  --foreground: var(--gs-ink) !important;
+  --muted-foreground: var(--gs-ink-2) !important;
+  --primary: var(--gs-accent) !important;
+}
+
+/* Google 深色模式 */
+html:not([data-agy-theme]):has(body.theme-dark),
+html[data-agy-theme="google"]:has(body.theme-dark),
+html:not([data-agy-theme]) body.theme-dark,
+html[data-agy-theme="google"] body.theme-dark {
+  --gs-bg: #10151c;
+  --gs-bg-2: #161d26;
+  --gs-side: #0b0f15;
+  --gs-side-elev: #151c26;
+  --gs-side-hover: rgba(138, 180, 248, 0.10);
+  --gs-side-border: #1f2937;
+  --gs-side-sep: rgba(148, 163, 184, 0.12);
+  --gs-row-selected: #17263d;
+  --gs-row-selected-border: rgba(138, 180, 248, 0.34);
+
+  --gs-ink: #e8edf4;
+  --gs-ink-2: #9aa4b2;
+  --gs-ink-3: #8391a5;
+  --gs-line: #27313f;
+  --gs-line-soft: #1d2530;
+
+  --gs-accent: #8ab4f8;
+  --gs-accent-hover: #aecbfa;
+  --gs-accent-strong: #c2dafc;
+  --gs-accent-soft: rgba(138, 180, 248, 0.14);
+  --gs-accent-ring: rgba(138, 180, 248, 0.32);
+
+  --gs-quad-soft: linear-gradient(
+    115deg,
+    rgba(138, 180, 248, 0.42) 0%,
+    rgba(242, 139, 130, 0.34) 33%,
+    rgba(253, 214, 99, 0.34) 66%,
+    rgba(129, 201, 149, 0.36) 100%
+  );
+  --gs-quad: linear-gradient(
+    115deg,
+    rgba(138, 180, 248, 0.85) 0%,
+    rgba(242, 139, 130, 0.76) 33%,
+    rgba(253, 214, 99, 0.76) 66%,
+    rgba(129, 201, 149, 0.78) 100%
+  );
+
+  --background: var(--gs-bg) !important;
+  --bg-canvas: var(--gs-bg) !important;
+  --color-background: var(--gs-bg) !important;
+  --sidebar: var(--gs-side) !important;
+  --color-sidebar: var(--gs-side) !important;
+  --sidebar-secondary: var(--gs-row-selected) !important;
+  --card: #161d26 !important;
+  --color-card: #161d26 !important;
+  --popover: #161d26 !important;
+  --color-popover: #161d26 !important;
+  --popover-foreground: var(--gs-ink) !important;
+  --border: var(--gs-line) !important;
+  --color-border: var(--gs-line) !important;
+  --foreground: var(--gs-ink) !important;
+  --muted-foreground: var(--gs-ink-2) !important;
+  --primary: var(--gs-accent) !important;
+}
+
+/* 2. Base --------------------------------------------------- */
+html:not([data-agy-theme]),
+html:not([data-agy-theme]) body,
+html[data-agy-theme="google"],
+html[data-agy-theme="google"] body {
+  background-color: var(--gs-bg) !important;
+  background-image:
+    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.032) 0%, transparent 44%),
+    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.022) 0%, transparent 42%),
+    radial-gradient(circle at 6% 92%, rgba(52, 168, 83, 0.018) 0%, transparent 42%),
+    radial-gradient(circle at 92% 94%, rgba(234, 67, 53, 0.020) 0%, transparent 44%) !important;
+  background-attachment: fixed !important;
+  color: var(--gs-ink) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+html:not([data-agy-theme]) body.theme-dark,
+html[data-agy-theme="google"] body.theme-dark {
+  background-image:
+    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.07) 0%, transparent 46%),
+    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.035) 0%, transparent 44%),
+    radial-gradient(circle at 6% 92%, rgba(52, 168, 83, 0.03) 0%, transparent 44%),
+    radial-gradient(circle at 92% 94%, rgba(234, 67, 53, 0.04) 0%, transparent 46%) !important;
+}
+
+html:not([data-agy-theme]) ::selection,
+html[data-agy-theme="google"] ::selection {
+  background: rgba(66, 133, 244, 0.22) !important;
+}
+
+html:not([data-agy-theme]) ::-webkit-scrollbar,
+html[data-agy-theme="google"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+html:not([data-agy-theme]) ::-webkit-scrollbar-track,
+html[data-agy-theme="google"] ::-webkit-scrollbar-track { background: transparent; }
+html:not([data-agy-theme]) ::-webkit-scrollbar-thumb,
+html[data-agy-theme="google"] ::-webkit-scrollbar-thumb {
+  background: rgba(95, 99, 104, 0.22);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+html:not([data-agy-theme]) ::-webkit-scrollbar-thumb:hover,
+html[data-agy-theme="google"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(95, 99, 104, 0.36);
+  background-clip: content-box;
+}
+
+/* 3. Sidebar（冷雾蓝灰分层 + 清晰分组 + 左侧指示选中态） -------- */
+html:not([data-agy-theme]) div[role="navigation"].bg-sidebar,
+html:not([data-agy-theme]) div[role="navigation"][aria-label="Sidebar"],
+html[data-agy-theme="google"] div[role="navigation"].bg-sidebar,
+html[data-agy-theme="google"] div[role="navigation"][aria-label="Sidebar"] {
+  background: var(--gs-side) !important;
+  border-right: 1px solid var(--gs-side-border) !important;
+  box-shadow: inset -1px 0 0 rgba(26, 115, 232, 0.04) !important;
+}
+
+html:not([data-agy-theme]) div[role="navigation"] .bg-sidebar,
+html[data-agy-theme="google"] div[role="navigation"] .bg-sidebar {
+  background: var(--gs-side) !important;
+  background-color: var(--gs-side) !important;
+}
+
+/* 分组区块标题（插件 / 置顶会话 / 项目 / 历史会话）：清晰分割与高辨识色阶 */
+html:not([data-agy-theme]) div[role="navigation"] [class*="group/section-header"],
+html[data-agy-theme="google"] div[role="navigation"] [class*="group/section-header"] {
+  background: var(--gs-side) !important;
+  background-color: var(--gs-side) !important;
+  border-top: 1px solid var(--gs-side-sep) !important;
+  margin-top: 8px !important;
+  padding-top: 10px !important;
+}
+
+html:not([data-agy-theme]) div[role="navigation"].bg-sidebar .text-xs,
+html:not([data-agy-theme]) div[role="navigation"].bg-sidebar h2,
+html:not([data-agy-theme]) div[role="navigation"].bg-sidebar span.text-xs,
+html[data-agy-theme="google"] div[role="navigation"].bg-sidebar .text-xs,
+html[data-agy-theme="google"] div[role="navigation"].bg-sidebar h2,
+html[data-agy-theme="google"] div[role="navigation"].bg-sidebar span.text-xs {
+  color: var(--gs-ink-3) !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* 顶部快捷项与插件项（自动化任务 / 扩展与定制 / 插件列表） */
+html:not([data-agy-theme]) div[role="navigation"] button.agy-button-custom,
+html:not([data-agy-theme]) div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]),
+html[data-agy-theme="google"] div[role="navigation"] button.agy-button-custom,
+html[data-agy-theme="google"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]) {
+  border-radius: 9px !important;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+html:not([data-agy-theme]) div[role="navigation"] button.agy-button-custom:hover,
+html:not([data-agy-theme]) div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover,
+html[data-agy-theme="google"] div[role="navigation"] button.agy-button-custom:hover,
+html[data-agy-theme="google"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover {
+  background: var(--gs-side-elev) !important;
+  color: var(--gs-accent) !important;
+  box-shadow: 0 1px 2px rgba(26, 56, 102, 0.07) !important;
+}
+
+/* 会话行：清晰层次 + 悬停微浮卡 + 选中高区分度柔蓝指示卡 */
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"],
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"] {
+  position: relative !important;
+  border: none !important;
+  border-radius: 9px !important;
+  margin: 1.5px 6px !important;
+  padding: 6px 10px !important;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease !important;
+  --row-bg: var(--gs-side);
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]::before,
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]::after,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]::before,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]:hover,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]:hover {
+  background: var(--gs-side-elev) !important;
+  box-shadow: 0 1px 3px rgba(26, 56, 102, 0.08) !important;
+  --row-bg: var(--gs-side-elev);
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]:hover span,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]:hover span {
+  color: var(--gs-accent) !important;
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"][data-selected="true"],
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"][data-selected="true"],
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary {
+  border: none !important;
+  background: var(--gs-row-selected) !important;
+  box-shadow:
+    inset 3px 0 0 var(--gs-accent),
+    inset 0 0 0 1px var(--gs-row-selected-border),
+    0 1px 2px rgba(26, 115, 232, 0.08) !important;
+  --row-bg: var(--gs-row-selected);
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span {
+  color: var(--gs-accent-strong) !important;
+  font-weight: 600 !important;
+}
+
+html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"] .agy-row-actions,
+html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"] .agy-row-actions {
+  background: linear-gradient(to right, transparent 0%, var(--row-bg) 32%) !important;
+}
+
+/* 新建对话：Google 专属白卡 + 常驻柔和四色渐变边框（悬停点亮） */
+html:not([data-agy-theme]) a[data-testid="new-conversation-button"],
+html[data-agy-theme="google"] a[data-testid="new-conversation-button"] {
+  position: relative !important;
+  border-radius: 9999px !important;
+  background: var(--gs-side-elev) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(26, 56, 102, 0.08), 0 3px 10px rgba(66, 133, 244, 0.07) !important;
+  color: var(--gs-accent) !important;
+  font-weight: 600 !important;
+  height: 36px !important;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+}
+
+html:not([data-agy-theme]) a[data-testid="new-conversation-button"]::before,
+html[data-agy-theme="google"] a[data-testid="new-conversation-button"]::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  padding: 1.5px !important;
+  background: var(--gs-quad-soft) !important;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  opacity: 1 !important;
+  transition: background 0.2s ease, opacity 0.2s ease !important;
+  pointer-events: none !important;
+}
+
+html:not([data-agy-theme]) a[data-testid="new-conversation-button"]:hover,
+html[data-agy-theme="google"] a[data-testid="new-conversation-button"]:hover {
+  box-shadow: 0 2px 12px rgba(66, 133, 244, 0.20) !important;
+  transform: translateY(-0.5px);
+}
+
+html:not([data-agy-theme]) a[data-testid="new-conversation-button"]:hover::before,
+html[data-agy-theme="google"] a[data-testid="new-conversation-button"]:hover::before {
+  background: var(--gs-quad) !important;
+}
+
+/* 侧栏底部设置区收口分割 */
+html:not([data-agy-theme]) div[role="navigation"].bg-sidebar > div:last-child,
+html[data-agy-theme="google"] div[role="navigation"].bg-sidebar > div:last-child {
+  border-top: 1px solid var(--gs-side-sep) !important;
+}
+
+/* 4. Main surface ------------------------------------------- */
+html:not([data-agy-theme]) main,
+html:not([data-agy-theme]) div[class*="bg-background"]:not([role="dialog"]),
+html[data-agy-theme="google"] main,
+html[data-agy-theme="google"] div[class*="bg-background"]:not([role="dialog"]) {
+  background-color: transparent !important;
+}
+
+html:not([data-agy-theme]) .md-sticky-message-bleed,
+html:not([data-agy-theme]) div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions),
+html[data-agy-theme="google"] .md-sticky-message-bleed,
+html[data-agy-theme="google"] div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions) {
+  display: none !important;
+}
+
+/* 5. Composer：Google 四色渐变细框 --------------------------- */
+html:not([data-agy-theme]) .surface-composer,
+html[data-agy-theme="google"] .surface-composer {
+  position: relative !important;
+  background: var(--gs-side-elev) !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 17px !important;
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.06),
+    0 4px 16px rgba(66, 133, 244, 0.06) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+html:not([data-agy-theme]) .surface-composer::after,
+html[data-agy-theme="google"] .surface-composer::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  padding: 1.5px !important;
+  background: var(--gs-quad-soft) !important;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite: xor !important;
+  mask-composite: exclude !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+html:not([data-agy-theme]) .surface-composer:focus-within,
+html[data-agy-theme="google"] .surface-composer:focus-within {
+  box-shadow:
+    0 1px 3px rgba(60, 64, 67, 0.07),
+    0 6px 22px rgba(66, 133, 244, 0.14) !important;
+}
+
+html:not([data-agy-theme]) .surface-composer:focus-within::after,
+html[data-agy-theme="google"] .surface-composer:focus-within::after {
+  background: var(--gs-quad) !important;
+}
+
+html:not([data-agy-theme]) .surface-composer-card,
+html[data-agy-theme="google"] .surface-composer-card {
+  background: var(--gs-side-elev) !important;
+  border: none !important;
+  border-radius: 15.5px !important;
+  box-shadow: none !important;
+}
+
+html:not([data-agy-theme]) .surface-composer-card p.pointer-events-none,
+html[data-agy-theme="google"] .surface-composer-card p.pointer-events-none {
+  color: var(--gs-ink-3) !important;
+  opacity: 1 !important;
+}
+
+/* 语音实时钮 */
+html:not([data-agy-theme]) span[data-testid="voice-live-pill"],
+html[data-agy-theme="google"] span[data-testid="voice-live-pill"] {
+  background: var(--gs-side-elev) !important;
+  color: var(--gs-accent) !important;
+  border: 1px solid rgba(66, 133, 244, 0.30) !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.06) !important;
+}
+html:not([data-agy-theme]) span[data-testid="voice-live-pill"]:hover,
+html[data-agy-theme="google"] span[data-testid="voice-live-pill"]:hover {
+  background: var(--gs-accent-soft) !important;
+  opacity: 1 !important;
+}
+
+/* 麦克风 */
+html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"],
+html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"] svg,
+html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"] svg {
+  color: var(--gs-ink-2) !important;
+}
+html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"]:hover,
+html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"]:hover {
+  background: rgba(95, 99, 104, 0.08) !important;
+}
+
+/* 发送键 */
+html:not([data-agy-theme]) button[data-testid="input-send-button"],
+html:not([data-agy-theme]) button[aria-label*="Send"],
+html:not([data-agy-theme]) button[aria-label*="发送"],
+html[data-agy-theme="google"] button[data-testid="input-send-button"],
+html[data-agy-theme="google"] button[aria-label*="Send"],
+html[data-agy-theme="google"] button[aria-label*="发送"] {
+  background: var(--gs-accent) !important;
+  color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.28) !important;
+  transition: background 0.16s ease !important;
+}
+html:not([data-agy-theme]) button[data-testid="input-send-button"]:hover,
+html:not([data-agy-theme]) button[aria-label*="Send"]:hover,
+html:not([data-agy-theme]) button[aria-label*="发送"]:hover,
+html[data-agy-theme="google"] button[data-testid="input-send-button"]:hover,
+html[data-agy-theme="google"] button[aria-label*="Send"]:hover,
+html[data-agy-theme="google"] button[aria-label*="发送"]:hover {
+  background: var(--gs-accent-hover) !important;
+}
+
+/* 正文与链接 */
+html:not([data-agy-theme]) [data-quotable="true"] .markdown-body,
+html:not([data-agy-theme]) [data-testid="planner-response-text"],
+html[data-agy-theme="google"] [data-quotable="true"] .markdown-body,
+html[data-agy-theme="google"] [data-testid="planner-response-text"] {
+  color: var(--gs-ink) !important;
+}
+
+html:not([data-agy-theme]) a[href^="http"],
+html[data-agy-theme="google"] a[href^="http"] { color: var(--gs-accent) !important; }
+html:not([data-agy-theme]) a[href^="http"]:hover,
+html[data-agy-theme="google"] a[href^="http"]:hover { color: var(--gs-accent-hover) !important; }
+
+/* 6. 浮层与设置弹窗（仅 Google 主题，区分亮/暗模式） ----------- */
+html:not([data-agy-theme]) [data-radix-popper-content-wrapper],
+html:not([data-agy-theme]) [role="menu"],
+html[data-agy-theme="google"] [data-radix-popper-content-wrapper],
+html[data-agy-theme="google"] [role="menu"] {
+  z-index: 999999 !important;
+}
+
+html:not([data-agy-theme]) body:not(.theme-dark) [role="dialog"],
+html:not([data-agy-theme]) body:not(.theme-dark) [role="menu"],
+html:not([data-agy-theme]) body:not(.theme-dark) [role="tooltip"],
+html:not([data-agy-theme]) body:not(.theme-dark) [role="listbox"],
+html:not([data-agy-theme]) body:not(.theme-dark) [data-radix-menu-content],
+html:not([data-agy-theme]) body:not(.theme-dark) [data-radix-tooltip-content],
+html:not([data-agy-theme]) body:not(.theme-dark) div[data-side][role="tooltip"],
+html:not([data-agy-theme]) body:not(.theme-dark) div[class*="popover-content"],
+html:not([data-agy-theme]) body:not(.theme-dark) div[class*="tooltip"],
+html:not([data-agy-theme]) body:not(.theme-dark) div[class*="dropdown-content"],
+html:not([data-agy-theme]) body:not(.theme-dark) .settings-modal-container,
+html:not([data-agy-theme]) body:not(.theme-dark) div[class*="modal-container"],
+html[data-agy-theme="google"] body:not(.theme-dark) [role="dialog"],
+html[data-agy-theme="google"] body:not(.theme-dark) [role="menu"],
+html[data-agy-theme="google"] body:not(.theme-dark) [role="tooltip"],
+html[data-agy-theme="google"] body:not(.theme-dark) [role="listbox"],
+html[data-agy-theme="google"] body:not(.theme-dark) [data-radix-menu-content],
+html[data-agy-theme="google"] body:not(.theme-dark) [data-radix-tooltip-content],
+html[data-agy-theme="google"] body:not(.theme-dark) div[data-side][role="tooltip"],
+html[data-agy-theme="google"] body:not(.theme-dark) div[class*="popover-content"],
+html[data-agy-theme="google"] body:not(.theme-dark) div[class*="tooltip"],
+html[data-agy-theme="google"] body:not(.theme-dark) div[class*="dropdown-content"],
+html[data-agy-theme="google"] body:not(.theme-dark) .settings-modal-container,
+html[data-agy-theme="google"] body:not(.theme-dark) div[class*="modal-container"] {
+  --background: #ffffff !important;
+  --bg-canvas: #ffffff !important;
+  --color-background: #ffffff !important;
+  --popover: #ffffff !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not([data-agy-theme]) [role="menu"],
+html:not([data-agy-theme]) [role="listbox"],
+html:not([data-agy-theme]) [data-radix-menu-content],
+html:not([data-agy-theme]) div[class*="dropdown-content"],
+html:not([data-agy-theme]) div[class*="popover-content"],
+html[data-agy-theme="google"] [role="menu"],
+html[data-agy-theme="google"] [role="listbox"],
+html[data-agy-theme="google"] [data-radix-menu-content],
+html[data-agy-theme="google"] div[class*="dropdown-content"],
+html[data-agy-theme="google"] div[class*="popover-content"] {
+  border: 1px solid var(--gs-line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 6px rgba(60, 64, 67, 0.06), 0 12px 32px rgba(60, 64, 67, 0.12) !important;
+}
+
+html:not([data-agy-theme]) [role="menuitem"]:hover,
+html:not([data-agy-theme]) [role="menuitemradio"]:hover,
+html:not([data-agy-theme]) [role="menuitem"][data-highlighted],
+html:not([data-agy-theme]) [role="menuitemradio"][data-highlighted],
+html[data-agy-theme="google"] [role="menuitem"]:hover,
+html[data-agy-theme="google"] [role="menuitemradio"]:hover,
+html[data-agy-theme="google"] [role="menuitem"][data-highlighted],
+html[data-agy-theme="google"] [role="menuitemradio"][data-highlighted] {
+  background: var(--gs-side-hover) !important;
+}
+
+html:not([data-agy-theme]) [role="tooltip"],
+html:not([data-agy-theme]) [data-radix-tooltip-content],
+html:not([data-agy-theme]) div[data-side][role="tooltip"],
+html:not([data-agy-theme]) div[class*="tooltip"],
+html[data-agy-theme="google"] [role="tooltip"],
+html[data-agy-theme="google"] [data-radix-tooltip-content],
+html[data-agy-theme="google"] div[data-side][role="tooltip"],
+html[data-agy-theme="google"] div[class*="tooltip"] {
+  color: var(--gs-ink) !important;
+  border: 1px solid var(--gs-line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(60, 64, 67, 0.12) !important;
+  z-index: 99999999 !important;
+}
+
+html:not([data-agy-theme]) [role="tooltip"] *,
+html:not([data-agy-theme]) [data-radix-tooltip-content] *,
+html[data-agy-theme="google"] [role="tooltip"] *,
+html[data-agy-theme="google"] [data-radix-tooltip-content] * {
+  color: var(--gs-ink) !important;
+}
+
+html:not([data-agy-theme]) [role="dialog"],
+html:not([data-agy-theme]) .settings-modal-container,
+html[data-agy-theme="google"] [role="dialog"],
+html[data-agy-theme="google"] .settings-modal-container {
+  border: 1px solid var(--gs-line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.10), 0 32px 80px rgba(60, 64, 67, 0.18) !important;
+  z-index: 99999 !important;
+}
+
+html:not([data-agy-theme]) .settings-modal-container aside,
+html:not([data-agy-theme]) .settings-modal-container div[class*="sidebar"],
+html:not([data-agy-theme]) .agy-dialog aside,
+html:not([data-agy-theme]) .agy-dialog div[class*="sidebar"],
+html[data-agy-theme="google"] .settings-modal-container aside,
+html[data-agy-theme="google"] .settings-modal-container div[class*="sidebar"],
+html[data-agy-theme="google"] .agy-dialog aside,
+html[data-agy-theme="google"] .agy-dialog div[class*="sidebar"] {
+  background: var(--gs-side) !important;
+  background-color: var(--gs-side) !important;
+  border-right: 1px solid var(--gs-side-border) !important;
+}
+
+html:not([data-agy-theme]) .settings-modal-container [aria-checked="true"],
+html:not([data-agy-theme]) .settings-modal-container [data-state="checked"][class*="border"],
+html[data-agy-theme="google"] .settings-modal-container [aria-checked="true"],
+html[data-agy-theme="google"] .settings-modal-container [data-state="checked"][class*="border"] {
+  border-color: var(--gs-accent) !important;
+  background: rgba(66, 133, 244, 0.06) !important;
+  box-shadow: 0 0 0 3px var(--gs-accent-soft) !important;
+}
+
+html:not([data-agy-theme]) button[role="switch"][data-state="checked"],
+html:not([data-agy-theme]) button[role="switch"][aria-checked="true"],
+html[data-agy-theme="google"] button[role="switch"][data-state="checked"],
+html[data-agy-theme="google"] button[role="switch"][aria-checked="true"] {
+  background: var(--gs-accent) !important;
+}
+
+html:not([data-agy-theme]) div[data-state="open"].fixed.inset-0:not([role="dialog"]),
+html:not([data-agy-theme]) div[class*="backdrop"],
+html[data-agy-theme="google"] div[data-state="open"].fixed.inset-0:not([role="dialog"]),
+html[data-agy-theme="google"] div[class*="backdrop"] {
+  background: rgba(32, 33, 36, 0.26) !important;
+}
+
+html:not([data-agy-theme]) *:focus-visible,
+html[data-agy-theme="google"] *:focus-visible {
+  outline-color: var(--gs-accent-ring) !important;
+}
+
+/* ============================================================
+   7. 跨三套主题共享的结构保障（不含皮肤色彩）
+   ============================================================ */
+.agy-hover-actions,
+div.agy-hover-actions,
+.agy-aux-tab .agy-hover-actions,
+.group:hover .agy-hover-actions,
+.agy-aux-tab:hover .agy-hover-actions {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.agy-aux-tab .agy-hover-actions button,
+.agy-aux-tab button[aria-label*="关闭"],
+.agy-aux-tab button[aria-label*="Close"] {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 20 !important;
+}
+
+#hakimi-dock { display: none !important; }
+
+.agy-muse-scroll-pad {
+  padding-bottom: 78px !important;
+  scroll-padding-bottom: 86px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #hakimi-muse-stage *, #hakimi-say { animation: none !important; transition: none !important; }
+}

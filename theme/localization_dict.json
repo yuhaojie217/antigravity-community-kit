@@ -1,0 +1,1206 @@
+[
+  [
+    "The breakdown below shows token usage from customizations like rules, skills, and MCP. If a budget is exceeded, large rules are demoted to path pointers and large customizations are excluded automatically.",
+    "下表显示规则、技能和 MCP 工具占用的 Token 配额。当超出上限时，大规则将自动降级为路径指针。"
+  ],
+  [
+    "When toggled on, Antigravity will use your AI credits to fulfill model requests once you're out of model quota. Antigravity will always use your model quota first before using AI credits.",
+    "开启后，当模型免费额度耗尽时将自动使用 AI 点数补充。系统将优先消耗基础配额。"
+  ],
+  [
+    "Permanently delete your remote conversations, projects, scheduled tasks, connected plugins and settings. Data in the desktop app and your Google account are not affected.",
+    "永久删除你的远程会话、项目、定时任务、已连接插件和设置。桌面端数据和 Google 账号不受影响。"
+  ],
+  [
+    "Please describe the issue in detail. The more actionable your feedback, the quicker our team can address your request. Some helpful information includes:",
+    "请详细描述遇到的问题，以便团队快速定位："
+  ],
+  [
+    "Reliable automation, in-depth debugging, and performance analysis in Chrome using Chrome DevTools and Puppeteer",
+    "借助 Chrome DevTools 与 Puppeteer 在 Chrome 中做自动化、深度调试和性能分析"
+  ],
+  [
+    "Keep the app accessible from the menu bar and running in the background when all windows are closed.",
+    "所有窗口关闭后保持托盘图标与后台运行。"
+  ],
+  [
+    "When toggled on, Antigravity collects usage data to help Google enhance performance and features.",
+    "开启后，Antigravity 将收集匿名使用数据以帮助改进性能与体验。"
+  ],
+  [
+    "Configure allowed and denied URLs for the browser subagent (invoked with /browser). Requires",
+    "配置浏览器子智能体（通过 /browser 调用）允许和禁止访问的网址。需要"
+  ],
+  [
+    "Controls whether the agent can run custom JavaScript to automate complex browser actions.",
+    "控制智能体能否运行自定义 JavaScript 来自动完成复杂的浏览器操作。"
+  ],
+  [
+    "To modify notification settings, open your operating system's system preferences.",
+    "如需修改系统通知权限，请在操作系统设置中调整。"
+  ],
+  [
+    "Receive product updates, tips, and promotions from Google Antigravity via email.",
+    "通过邮件接收产品更新、使用技巧与活动通知。"
+  ],
+  [
+    "Show system notifications when your action is needed or the agent finishes.",
+    "当任务需要您确认或执行完毕时弹出系统通知。"
+  ],
+  [
+    "Configure built-in browser, link opening, and browser subagent preferences.",
+    "配置内置浏览器、链接打开方式和浏览器子智能体偏好。"
+  ],
+  [
+    "Whether the agent asks you to review its documents. Modified in 4 projects",
+    "智能体修改计划文档时是否需要您审查确认（已在 4 个项目中生效）"
+  ],
+  [
+    "Clear visited URLs and autocomplete suggestions from the built-in browser.",
+    "清除内置浏览器的访问记录和自动补全建议。"
+  ],
+  [
+    "You can upgrade to a Google AI Ultra plan to receive higher rate limits.",
+    "升级至 Google AI Ultra 方案可享受更高的速率限制与并发额度。"
+  ],
+  [
+    "Configure agent execution, queued message delivery, and permissions.",
+    "配置智能体执行、排队消息投递与权限。"
+  ],
+  [
+    "Configure what the agent can do in local and remote conversations.",
+    "配置智能体在本地和远程会话中可以做什么。"
+  ],
+  [
+    "Gemini 4 Carbon is currently available to Ultra plan subscribers.",
+    "Gemini 4 Carbon 当前仅面向 Ultra 方案订阅用户开放。"
+  ],
+  [
+    "Gemini 4 Carbon is currently available to Ultra plan subscribers",
+    "Gemini 4 Carbon 当前仅面向 Ultra 方案订阅用户开放"
+  ],
+  [
+    "Full interface for coding, developer tools, and managing agents.",
+    "完整界面，包含编码、开发者工具和智能体管理。"
+  ],
+  [
+    "Folder where files downloaded in the built-in browser are saved.",
+    "内置浏览器下载文件的保存目录。"
+  ],
+  [
+    "Developer-only tools. These settings do not affect other users.",
+    "开发者专属工具与实验性选项，不影响日常使用。"
+  ],
+  [
+    "Simplified interface for research, writing, and everyday tasks.",
+    "精简界面，适合研究、写作和日常事务。"
+  ],
+  [
+    "Play a sound when your action is needed or the agent finishes.",
+    "当任务需要确认或执行完毕时播放提示音。"
+  ],
+  [
+    "Prevent the computer from sleeping while the app is running.",
+    "客户端执行任务期间阻止计算机进入睡眠状态。"
+  ],
+  [
+    "Configure the agent's visual theme and display preferences.",
+    "配置智能体视觉主题与界面呈现偏好。"
+  ],
+  [
+    "Using the Google Antigravity Python SDK to build AI agents",
+    "使用 Google Antigravity Python SDK 构建 AI 智能体"
+  ],
+  [
+    "Configure global allowed and denied resource permissions.",
+    "配置全局允许和拒绝的本地资源访问权限。"
+  ],
+  [
+    "Core tools and knowledge required to develop for Android.",
+    "Android 开发所需的核心工具与知识。"
+  ],
+  [
+    "Manage your plan, credentials, and general preferences.",
+    "管理您的订阅方案、凭证信息与常规偏好。"
+  ],
+  [
+    "Scan the code to open this device in Remote Control, or",
+    "扫描二维码连接此设备，或"
+  ],
+  [
+    "Choose how much detail is shown during a conversation.",
+    "选择在对话中展示多少执行细节。"
+  ],
+  [
+    "Modify permissions for file, terminal, and MCP tools.",
+    "修改文件系统、命令行终端与 MCP 工具的具体权限。"
+  ],
+  [
+    "The voice used in Voice mode. Powered by Gemini Live.",
+    "语音交互使用的音色（由 Gemini Live 驱动）。"
+  ],
+  [
+    "Configure default behaviors, skills, and MCP servers.",
+    "配置默认行为、技能和 MCP 服务器。"
+  ],
+  [
+    "Keyboard shortcuts for quick navigation and control.",
+    "用于快速导航与全局调度的快捷键列表。"
+  ],
+  [
+    "Whether the agent asks you to review its documents.",
+    "智能体修改重要计划文档时是否需要您审查确认。"
+  ],
+  [
+    "Choose where links open by default when clicked.",
+    "选择点击链接时默认在哪里打开。"
+  ],
+  [
+    "Whatever the voice-engine-addr flag serves you.",
+    "由 voice-engine-addr 参数指定的音色。"
+  ],
+  [
+    "Configure allowed and denied URLs for reading.",
+    "配置网页与网络请求的白名单与黑名单规则。"
+  ],
+  [
+    "Controls permissions for remote conversations.",
+    "控制远程会话的权限。"
+  ],
+  [
+    "to ask for content changes for legal reasons.",
+    "以法律原因申请内容变更。"
+  ],
+  [
+    "Please list the steps to reproduce the issue",
+    "请列出复现问题的步骤"
+  ],
+  [
+    "Configure when follow-up messages are sent.",
+    "配置后续消息与任务的排队投递时机。"
+  ],
+  [
+    "Work with local agents from another device.",
+    "支持从手机或其他设备跨屏连接本地智能体。"
+  ],
+  [
+    "Input device for voice mode and dictation.",
+    "用于语音模式与听写输入的音频设备。"
+  ],
+  [
+    "Search, upload, download, and share files.",
+    "搜索、上传、下载和分享文件。"
+  ],
+  [
+    "Ask anything, @ to mention, / for actions",
+    "向智能体提问，输入 @ 引用上下文，输入 / 唤起快捷操作"
+  ],
+  [
+    "Interrupt the agent and send immediately.",
+    "打断智能体，立即发送。"
+  ],
+  [
+    "Controls the actions the agent can take.",
+    "控制智能体可在本地执行的操作与权限范围。"
+  ],
+  [
+    "Manage your notification preferences.",
+    "管理系统通知与消息提示偏好。"
+  ],
+  [
+    "Manage your model quota and credits.",
+    "管理模型使用额度与 AI 积分。"
+  ],
+  [
+    "Manage project folders and settings.",
+    "管理项目文件夹与设置。"
+  ],
+  [
+    "By using this app, you agree to its",
+    "使用此应用即表示您同意其"
+  ],
+  [
+    "available to Ultra plan subscribers",
+    "面向 Ultra 方案订阅用户开放"
+  ],
+  [
+    "Queue until after the current turn.",
+    "排队，等当前这轮结束后再发送。"
+  ],
+  [
+    "Describe the bug you encountered...",
+    "描述你遇到的问题..."
+  ],
+  [
+    "to have the agent generate a plan.",
+    "即可让智能体自动生成结构化计划。"
+  ],
+  [
+    "Antigravity Workspace View Window",
+    "Antigravity 工作区 视图 窗口"
+  ],
+  [
+    "Unlock the power of agent swarms.",
+    "多智能体协作。"
+  ],
+  [
+    "How loud Antigravity's voice is.",
+    "智能体语音回答的播放音量。"
+  ],
+  [
+    "Manage Antigravity app settings.",
+    "管理 Antigravity 客户端基础设置。"
+  ],
+  [
+    "Set the volume of agent sounds.",
+    "调节智能体提示音的音量大小。"
+  ],
+  [
+    "Attach a screenshot (optional)",
+    "附带屏幕截图 (可选)"
+  ],
+  [
+    "Attach Antigravity server logs",
+    "附带服务端调试日志"
+  ],
+  [
+    "current: Gemini 3.8 Flash High",
+    "当前选择: Gemini 3.8 Flash High"
+  ],
+  [
+    "Enable Notifications for Agent",
+    "智能体事件通知"
+  ],
+  [
+    "Refresh quota and credits data",
+    "刷新额度与积分数据"
+  ],
+  [
+    "Delete All Remote Agents Data",
+    "删除全部远程智能体数据"
+  ],
+  [
+    "Select Previous Conversation",
+    "切换到上一个会话"
+  ],
+  [
+    "Steps to reproduce the issue",
+    "复现步骤"
+  ],
+  [
+    "New Conversation in Project",
+    "在项目中新建对话"
+  ],
+  [
+    "Toggle Maximize Side Panel",
+    "最大化/还原辅助面板"
+  ],
+  [
+    "Archive This Conversation",
+    "归档当前会话"
+  ],
+  [
+    "Enable AI Credit Overages",
+    "允许超额使用 AI 点数"
+  ],
+  [
+    "Build With Google Plugins",
+    "Google 官方插件"
+  ],
+  [
+    "Five Hour Limit Remaining",
+    "5 小时剩余额度"
+  ],
+  [
+    "Your Plan: Google AI Pro",
+    "当前方案：Google AI Pro"
+  ],
+  [
+    "Open Conversation Picker",
+    "快速选择会话"
+  ],
+  [
+    "Select Next Conversation",
+    "切换到下一个会话"
+  ],
+  [
+    "Any relevant information",
+    "其他相关信息"
+  ],
+  [
+    "Search customizations...",
+    "搜索自定义扩展与插件..."
+  ],
+  [
+    "Open System Preferences",
+    "打开系统偏好设置"
+  ],
+  [
+    "Enable Sounds for Agent",
+    "启用智能体提示音"
+  ],
+  [
+    "Previous Side Panel Tab",
+    "切换到上一辅助标签"
+  ],
+  [
+    "Background color picker",
+    "背景色选择"
+  ],
+  [
+    "Foreground color picker",
+    "前景色选择"
+  ],
+  [
+    "Background Task Output",
+    "后台任务输出"
+  ],
+  [
+    "Move Conversation Down",
+    "在列表中下移会话"
+  ],
+  [
+    "Toggle Voice Recording",
+    "开启/暂停语音录制"
+  ],
+  [
+    "Weekly Limit Remaining",
+    "本周剩余额度"
+  ],
+  [
+    "Toggle Overview Panel",
+    "切换概览面板"
+  ],
+  [
+    "Enable Remote Control",
+    "启用远程控制"
+  ],
+  [
+    "Enable 通知提醒 for Agent",
+    "启用智能体系统通知"
+  ],
+  [
+    "Toggle Model Selector",
+    "唤起模型选择器"
+  ],
+  [
+    "Notification Settings",
+    "通知设置"
+  ],
+  [
+    "Claude and GPT models",
+    "Claude 与 GPT 模型"
+  ],
+  [
+    "Network Access Rules",
+    "网络访问规则"
+  ],
+  [
+    "Move Conversation Up",
+    "在列表中上移会话"
+  ],
+  [
+    "Remote Control Issue",
+    "远程控制问题"
+  ],
+  [
+    "Pinned Conversations",
+    "置顶会话"
+  ],
+  [
+    "Software Engineering",
+    "软件工程"
+  ],
+  [
+    "Other Customizations",
+    "其他自定义项"
+  ],
+  [
+    "Enter device name...",
+    "输入设备名称..."
+  ],
+  [
+    "Next Side Panel Tab",
+    "切换到下一辅助标签"
+  ],
+  [
+    "Accent color picker",
+    "强调色选择"
+  ],
+  [
+    "Remote Control link",
+    "远程控制链接"
+  ],
+  [
+    "Search shortcuts...",
+    "搜索快捷键..."
+  ],
+  [
+    "Toggle Full Screen",
+    "切换全屏"
+  ],
+  [
+    "Bring All to Front",
+    "全部置顶"
+  ],
+  [
+    "Plan Review Policy",
+    "计划文档审查策略"
+  ],
+  [
+    "Keyboard shortcuts",
+    "快捷键导航"
+  ],
+  [
+    "Conversation Steps",
+    "思考与执行步骤"
+  ],
+  [
+    "Mute Voice Speaker",
+    "扬声器静音"
+  ],
+  [
+    "Any error messages",
+    "报错日志或提示"
+  ],
+  [
+    "Steps to Reproduce",
+    "复现步骤说明"
+  ],
+  [
+    "Remote Agents Data",
+    "远程智能体数据"
+  ],
+  [
+    "Permanently delete",
+    "永久删除"
+  ],
+  [
+    "Toggle Side Panel",
+    "切换辅助面板"
+  ],
+  [
+    "Permission Preset",
+    "权限预设"
+  ],
+  [
+    "Reopen Closed Tab",
+    "重新打开关闭的标签"
+  ],
+  [
+    "Add to Chat/Quote",
+    "引用选中文本至输入框"
+  ],
+  [
+    "Expected behavior",
+    "预期效果"
+  ],
+  [
+    "Advanced Settings",
+    "高级设置"
+  ],
+  [
+    "Download Location",
+    "下载位置"
+  ],
+  [
+    "Edit project name",
+    "编辑项目名称"
+  ],
+  [
+    "Enable Telemetry",
+    "启用遥测数据"
+  ],
+  [
+    "Marketing Emails",
+    "营销与产品邮件"
+  ],
+  [
+    "Terms of Service",
+    "服务条款"
+  ],
+  [
+    "Plan 查看更改 Policy",
+    "计划文档审查策略"
+  ],
+  [
+    "Send Immediately",
+    "立即投递"
+  ],
+  [
+    "Keep In Menu Bar",
+    "关闭窗口后常驻托盘"
+  ],
+  [
+    "Open File Search",
+    "全局文件搜索"
+  ],
+  [
+    "Auth and Billing",
+    "账号与订阅账单"
+  ],
+  [
+    "Send feedback as",
+    "以该账号身份提交："
+  ],
+  [
+    "New Conversation",
+    "新建对话"
+  ],
+  [
+    "Interface Layout",
+    "界面布局"
+  ],
+  [
+    "Built-in Browser",
+    "内置浏览器"
+  ],
+  [
+    "External Browser",
+    "外部浏览器"
+  ],
+  [
+    "Browsing History",
+    "浏览记录"
+  ],
+  [
+    "General Feedback",
+    "一般反馈"
+  ],
+  [
+    "Default (Mendel)",
+    "默认（Mendel）"
+  ],
+  [
+    "Search shortcuts",
+    "搜索快捷键"
+  ],
+  [
+    "Project options",
+    "项目选项"
+  ],
+  [
+    "新建对话 in Project",
+    "在项目中新建对话"
+  ],
+  [
+    "Queued Messages",
+    "排队消息策略"
+  ],
+  [
+    "Notification 设置",
+    "系统通知设置"
+  ],
+  [
+    "Layout Controls",
+    "窗口与布局调度"
+  ],
+  [
+    "Toggle Terminal",
+    "打开/收起终端"
+  ],
+  [
+    "Feature Request",
+    "新功能建议"
+  ],
+  [
+    "Actual behavior",
+    "实际现象"
+  ],
+  [
+    "Delete All Data",
+    "删除全部数据"
+  ],
+  [
+    "Remove resource",
+    "移除资源"
+  ],
+  [
+    "Toggle sidebar",
+    "切换侧栏"
+  ],
+  [
+    "Toggle Sidebar",
+    "切换侧边栏"
+  ],
+  [
+    "Rename Project",
+    "重命名项目"
+  ],
+  [
+    "Remove Project",
+    "从工作区移除项目"
+  ],
+  [
+    "Agent Behavior",
+    "智能体行为策略"
+  ],
+  [
+    "System default",
+    "系统默认"
+  ],
+  [
+    "Remote Control",
+    "远程控制"
+  ],
+  [
+    "Reopen 关闭d Tab",
+    "重新打开关闭的标签"
+  ],
+  [
+    "Mute Voice Mic",
+    "麦克风静音"
+  ],
+  [
+    "Customizations",
+    "扩展与定制"
+  ],
+  [
+    "Not in Project",
+    "未归入项目"
+  ],
+  [
+    "Knowledge Work",
+    "知识工作"
+  ],
+  [
+    "Always Proceed",
+    "始终允许"
+  ],
+  [
+    "Models & Usage",
+    "模型与用量"
+  ],
+  [
+    "Delete Project",
+    "删除项目"
+  ],
+  [
+    "Prevent Sleep",
+    "防止休眠"
+  ],
+  [
+    "Default Light",
+    "默认浅色"
+  ],
+  [
+    "Open Settings",
+    "打开设置面板"
+  ],
+  [
+    "Model Credits",
+    "AI 点数额度"
+  ],
+  [
+    "Feedback Type",
+    "反馈类型"
+  ],
+  [
+    "常规设置 Feedback",
+    "常规问题反馈"
+  ],
+  [
+    "Conversations",
+    "历史会话"
+  ],
+  [
+    "Give Feedback",
+    "提供反馈"
+  ],
+  [
+    "files changed",
+    "个文件已变更"
+  ],
+  [
+    "Notifications",
+    "通知"
+  ],
+  [
+    "This Computer",
+    "本机"
+  ],
+  [
+    "Open Links In",
+    "链接打开方式"
+  ],
+  [
+    "Gemini Models",
+    "Gemini 模型"
+  ],
+  [
+    "Delete plugin",
+    "删除插件"
+  ],
+  [
+    "Close Window",
+    "关闭窗口"
+  ],
+  [
+    "Voice engine",
+    "语音引擎"
+  ],
+  [
+    "Find in Pane",
+    "在当前面板中查找"
+  ],
+  [
+    "模型列表 & Usage",
+    "模型配额与用量"
+  ],
+  [
+    "file changed",
+    "个文件已变更"
+  ],
+  [
+    "Select model",
+    "选择模型"
+  ],
+  [
+    "Code Preview",
+    "代码预览主题"
+  ],
+  [
+    "Conversation",
+    "会话"
+  ],
+  [
+    "Voice volume",
+    "语音音量"
+  ],
+  [
+    "Chime volume",
+    "提示音音量"
+  ],
+  [
+    "Weekly limit",
+    "每周额度"
+  ],
+  [
+    "Actual Size",
+    "实际大小"
+  ],
+  [
+    "Modified in",
+    "生效于"
+  ],
+  [
+    "Device Name",
+    "本机设备名"
+  ],
+  [
+    "App version",
+    "客户端版本"
+  ],
+  [
+    "Light Theme",
+    "浅色主题"
+  ],
+  [
+    "Token Usage",
+    "Token 用量分析"
+  ],
+  [
+    "Other 自定义扩展",
+    "其他扩展项"
+  ],
+  [
+    "Focus Input",
+    "快速聚焦输入框"
+  ],
+  [
+    "Model Quota",
+    "模型每日配额"
+  ],
+  [
+    "Description",
+    "详细问题描述"
+  ],
+  [
+    "Marketplace",
+    "插件市场"
+  ],
+  [
+    "Automations",
+    "自动化任务"
+  ],
+  [
+    "Unavailable",
+    "暂不可用"
+  ],
+  [
+    "Application",
+    "应用"
+  ],
+  [
+    "Permissions",
+    "权限"
+  ],
+  [
+    "Danger Zone",
+    "危险操作"
+  ],
+  [
+    "Reset Zoom",
+    "重置缩放"
+  ],
+  [
+    "Learn more",
+    "了解更多"
+  ],
+  [
+    "and select",
+    "并选择"
+  ],
+  [
+    "Always Ask",
+    "总是询问确认"
+  ],
+  [
+    "Voice mode",
+    "实时语音交互"
+  ],
+  [
+    "Microphone",
+    "输入麦克风"
+  ],
+  [
+    "Dark Theme",
+    "深色主题"
+  ],
+  [
+    "Background",
+    "背景色"
+  ],
+  [
+    "Foreground",
+    "前景色"
+  ],
+  [
+    "Navigation",
+    "页面导航"
+  ],
+  [
+    "Your Plan:",
+    "当前方案："
+  ],
+  [
+    "Bug Report",
+    "错误缺陷报告"
+  ],
+  [
+    "Legal Help",
+    "法律援助"
+  ],
+  [
+    "View Usage",
+    "查看用量统计"
+  ],
+  [
+    "Appearance",
+    "外观"
+  ],
+  [
+    "Go Forward",
+    "前进"
+  ],
+  [
+    "Voice Mode",
+    "语音模式"
+  ],
+  [
+    "Add Folder",
+    "添加文件夹"
+  ],
+  [
+    "Global 权限",
+    "全局权限"
+  ],
+  [
+    "Execution",
+    "执行控制"
+  ],
+  [
+    "copy link",
+    "复制连接"
+  ],
+  [
+    "Mcp Tools",
+    "MCP 工具"
+  ],
+  [
+    "Developer",
+    "开发者调试"
+  ],
+  [
+    "Installed",
+    "已安装扩展"
+  ],
+  [
+    "Workspace",
+    "工作区"
+  ],
+  [
+    "Shortcuts",
+    "快捷键"
+  ],
+  [
+    "Font Size",
+    "字号"
+  ],
+  [
+    "Customize",
+    "自定义"
+  ],
+  [
+    "Copy path",
+    "复制路径"
+  ],
+  [
+    "including",
+    "包括"
+  ],
+  [
+    "Zoom Out",
+    "缩小"
+  ],
+  [
+    "Minimize",
+    "最小化"
+  ],
+  [
+    "Sign Out",
+    "退出登录"
+  ],
+  [
+    "projects",
+    "个项目"
+  ],
+  [
+    "Contrast",
+    "对比度"
+  ],
+  [
+    "Settings",
+    "设置"
+  ],
+  [
+    "Projects",
+    "项目"
+  ],
+  [
+    "Show All",
+    "显示全部"
+  ],
+  [
+    "Advanced",
+    "高级"
+  ],
+  [
+    "5h limit",
+    "5 小时额度"
+  ],
+  [
+    "Zoom In",
+    "放大"
+  ],
+  [
+    "Account",
+    "账号管理"
+  ],
+  [
+    "Upgrade",
+    "升级方案"
+  ],
+  [
+    "Tool 权限",
+    "工具权限"
+  ],
+  [
+    "Version",
+    "版本信息"
+  ],
+  [
+    "New Tab",
+    "新建标签页"
+  ],
+  [
+    "Open 设置",
+    "打开设置面板"
+  ],
+  [
+    "General",
+    "常规"
+  ],
+  [
+    "Browser",
+    "浏览器"
+  ],
+  [
+    "Default",
+    "默认"
+  ],
+  [
+    "Verbose",
+    "详细"
+  ],
+  [
+    "Plugin:",
+    "插件："
+  ],
+  [
+    "Plugins",
+    "插件"
+  ],
+  [
+    "Change…",
+    "更改…"
+  ],
+  [
+    "Go Back",
+    "后退"
+  ],
+  [
+    "Folders",
+    "文件夹"
+  ],
+  [
+    "Project",
+    "项目"
+  ],
+  [
+    "Change",
+    "更改"
+  ],
+  [
+    "Volume",
+    "输出音量"
+  ],
+  [
+    "Strong",
+    "高对比"
+  ],
+  [
+    "Preset",
+    "色彩预设"
+  ],
+  [
+    "Accent",
+    "强调色"
+  ],
+  [
+    "Skills",
+    "专业技能"
+  ],
+  [
+    "Submit",
+    "提交反馈"
+  ],
+  [
+    "Window",
+    "窗口"
+  ],
+  [
+    "Review",
+    "审查变更"
+  ],
+  [
+    "Notice",
+    "提示"
+  ],
+  [
+    "Models",
+    "模型"
+  ],
+  [
+    "Remote",
+    "远程"
+  ],
+  [
+    "Global",
+    "全局"
+  ],
+  [
+    "System",
+    "跟随系统"
+  ],
+  [
+    "Delete",
+    "删除"
+  ],
+  [
+    "Email",
+    "电子邮箱"
+  ],
+  [
+    "Queue",
+    "排队等待"
+  ],
+  [
+    "Voice",
+    "音色选择"
+  ],
+  [
+    "Sound",
+    "提示音"
+  ],
+  [
+    "Rules",
+    "自定义规则"
+  ],
+  [
+    "Model",
+    "模型选择"
+  ],
+  [
+    "Theme",
+    "主题"
+  ],
+  [
+    "Clear",
+    "清除"
+  ],
+  [
+    "Visit",
+    "访问"
+  ],
+  [
+    "Close",
+    "关闭"
+  ],
+  [
+    "Light",
+    "浅色"
+  ],
+  [
+    "Usage",
+    "用量"
+  ],
+  [
+    "Type",
+    "输入"
+  ],
+  [
+    "Chat",
+    "对话外观"
+  ],
+  [
+    "Font",
+    "字体族"
+  ],
+  [
+    "Plan",
+    "订阅方案"
+  ],
+  [
+    "View",
+    "视图"
+  ],
+  [
+    "Edit",
+    "编辑"
+  ],
+  [
+    "Dark",
+    "深色"
+  ]
+]
