@@ -1202,5 +1202,21 @@
   [
     "Dark",
     "深色"
+  ],
+  [
+    "Input Box",
+    "输入框"
+  ],
+  [
+    "Queued messages",
+    "排队消息"
+  ],
+  [
+    "Send message",
+    "发送消息快捷键"
+  ],
+  [
+    "Choose which key sends a message in the chat composer.",
+    "选择在聊天输入框中用于发送消息的按键。"
   ]
 ]

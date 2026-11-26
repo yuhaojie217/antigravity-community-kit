@@ -80,9 +80,13 @@ html[data-agy-theme="google"] {
   --primary: var(--gs-accent) !important;
 }
 
-/* Google 深色模式 */
+/* Google 深色模式（被动跟随官方暗色类） */
 html:not([data-agy-theme]):has(body.theme-dark),
 html[data-agy-theme="google"]:has(body.theme-dark),
+html:not([data-agy-theme]).dark,
+html[data-agy-theme="google"].dark,
+html:not([data-agy-theme])[data-theme="dark"],
+html[data-agy-theme="google"][data-theme="dark"],
 html:not([data-agy-theme]) body.theme-dark,
 html[data-agy-theme="google"] body.theme-dark {
   --gs-bg: #10151c;
@@ -447,13 +451,13 @@ html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-t
   background: rgba(95, 99, 104, 0.08) !important;
 }
 
-/* 发送键 */
+/* 发送键（严格限定在聊天输入框内，绝不误伤设置页含“发送”字样的分段开关） */
 html:not([data-agy-theme]) button[data-testid="input-send-button"],
-html:not([data-agy-theme]) button[aria-label*="Send"],
-html:not([data-agy-theme]) button[aria-label*="发送"],
+html:not([data-agy-theme]) .surface-composer button[aria-label*="Send"],
+html:not([data-agy-theme]) .surface-composer button[aria-label*="发送"],
 html[data-agy-theme="google"] button[data-testid="input-send-button"],
-html[data-agy-theme="google"] button[aria-label*="Send"],
-html[data-agy-theme="google"] button[aria-label*="发送"] {
+html[data-agy-theme="google"] .surface-composer button[aria-label*="Send"],
+html[data-agy-theme="google"] .surface-composer button[aria-label*="发送"] {
   background: var(--gs-accent) !important;
   color: #ffffff !important;
   background-image: none !important;
@@ -461,11 +465,11 @@ html[data-agy-theme="google"] button[aria-label*="发送"] {
   transition: background 0.16s ease !important;
 }
 html:not([data-agy-theme]) button[data-testid="input-send-button"]:hover,
-html:not([data-agy-theme]) button[aria-label*="Send"]:hover,
-html:not([data-agy-theme]) button[aria-label*="发送"]:hover,
+html:not([data-agy-theme]) .surface-composer button[aria-label*="Send"]:hover,
+html:not([data-agy-theme]) .surface-composer button[aria-label*="发送"]:hover,
 html[data-agy-theme="google"] button[data-testid="input-send-button"]:hover,
-html[data-agy-theme="google"] button[aria-label*="Send"]:hover,
-html[data-agy-theme="google"] button[aria-label*="发送"]:hover {
+html[data-agy-theme="google"] .surface-composer button[aria-label*="Send"]:hover,
+html[data-agy-theme="google"] .surface-composer button[aria-label*="发送"]:hover {
   background: var(--gs-accent-hover) !important;
 }
 
@@ -524,6 +528,35 @@ html[data-agy-theme="google"] body:not(.theme-dark) div[class*="modal-container"
   opacity: 1 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* 暗色模式下浮层与设置弹窗深炭实底，被动跟随官方暗色且防透底 */
+html:not([data-agy-theme]) body.theme-dark [role="dialog"],
+html:not([data-agy-theme]) body.theme-dark [role="menu"],
+html:not([data-agy-theme]) body.theme-dark [role="tooltip"],
+html:not([data-agy-theme]) body.theme-dark [role="listbox"],
+html:not([data-agy-theme]) body.theme-dark [data-radix-menu-content],
+html:not([data-agy-theme]) body.theme-dark [data-radix-tooltip-content],
+html:not([data-agy-theme]) body.theme-dark div[class*="popover-content"],
+html:not([data-agy-theme]) body.theme-dark div[class*="dropdown-content"],
+html:not([data-agy-theme]) body.theme-dark .settings-modal-container,
+html[data-agy-theme="google"] body.theme-dark [role="dialog"],
+html[data-agy-theme="google"] body.theme-dark [role="menu"],
+html[data-agy-theme="google"] body.theme-dark [role="tooltip"],
+html[data-agy-theme="google"] body.theme-dark [role="listbox"],
+html[data-agy-theme="google"] body.theme-dark [data-radix-menu-content],
+html[data-agy-theme="google"] body.theme-dark [data-radix-tooltip-content],
+html[data-agy-theme="google"] body.theme-dark div[class*="popover-content"],
+html[data-agy-theme="google"] body.theme-dark div[class*="dropdown-content"],
+html[data-agy-theme="google"] body.theme-dark .settings-modal-container {
+  --background: #161d26 !important;
+  --bg-canvas: #161d26 !important;
+  --color-background: #161d26 !important;
+  --popover: #161d26 !important;
+  background: #161d26 !important;
+  background-color: #161d26 !important;
+  background-image: none !important;
+  opacity: 1 !important;
 }
 
 html:not([data-agy-theme]) [role="menu"],

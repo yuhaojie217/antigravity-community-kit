@@ -36,10 +36,31 @@ function readThemeMode() {
   }
 }
 
+function isHostDarkMode() {
+  const b = document.body;
+  const h = document.documentElement;
+  return !!(
+    (b && (b.classList.contains('theme-dark') || b.classList.contains('dark'))) ||
+    (h && (h.classList.contains('dark') || h.getAttribute('data-theme') === 'dark'))
+  );
+}
+
 function getEffectiveSurfaceForPulse() {
-  if (document.body && document.body.classList.contains('theme-dark')) return 'dark';
+  if (isHostDarkMode()) return 'dark';
   const m = readThemeMode();
   return m === 'claude' ? 'claude' : 'google';
+}
+
+function syncPulseDrawerSurface() {
+  const frame = document.getElementById('agy-pulse-iframe');
+  if (!frame || !frame.src) return;
+  const surf = getEffectiveSurfaceForPulse();
+  if (frame.dataset.surf !== surf) {
+    frame.dataset.surf = surf;
+    try {
+      frame.contentWindow?.postMessage({ type: 'gemini-pulse:surface', surface: surf }, new URL(frame.src).origin);
+    } catch (_) {}
+  }
 }
 
 function applyThemeMode(mode) {
@@ -77,16 +98,7 @@ function applyThemeMode(mode) {
   }
 
   // Sync side drawer iframe theme live via postMessage without reloading the iframe
-  const frame = document.getElementById('agy-pulse-iframe');
-  if (frame && frame.src) {
-    const surf = getEffectiveSurfaceForPulse();
-    if (frame.dataset.surf !== surf) {
-      frame.dataset.surf = surf;
-      try {
-        frame.contentWindow?.postMessage({ type: 'gemini-pulse:surface', surface: surf }, new URL(frame.src).origin);
-      } catch (_) {}
-    }
-  }
+  syncPulseDrawerSurface();
   return normalized;
 }
 
@@ -1508,6 +1520,7 @@ function ensureObserver() {
   let refreshQueued = false;
   function refreshFromHost() {
     refreshQueued = false;
+    syncPulseDrawerSurface();
     syncHakimiState();
     const composer = document.querySelector('.surface-composer');
     const needsRing = composer && !document.getElementById('agy-codex-ctx-btn');

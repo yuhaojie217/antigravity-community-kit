@@ -5,7 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)](#快速开始windows)
 [![Zero External Dependencies](https://img.shields.io/badge/Runtime%20Deps-Zero-16a34a.svg)](#目录结构)
-[![Release](https://img.shields.io/badge/Release-v1.0.0-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
+[![Release](https://img.shields.io/badge/Release-v1.0.1-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
+[![GitHub Downloads](https://img.shields.io/github/downloads/yuhaojie217/antigravity-community-kit/total?label=Downloads&color=16a34a)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
 
 ---
 
@@ -28,7 +29,7 @@
 ![桌边动态搭子全动作预览](docs/assets/muse-poses.png)
 
 ### 3. `gemini-pulse`：512K 上下文窗口、官方配额池与 7 日趋势看板
-输入框权限按钮左侧嵌入 Codex 风格 SVG 圆环与悬停速览卡，单击滑出右侧完整看板（收起自动断开 SSE，空闲零冗余连接），自动跟随主窗口皮肤色调，支持一键在 **512K 自动压缩线** 与 **1M 模型物理上限** 之间切换。
+输入框权限按钮左侧嵌入 Codex 同款升级版可点击 SVG 圆环与悬停速览卡，单击滑出右侧完整看板（收起自动断开 SSE，空闲零冗余连接），被动跟随主窗口亮/暗色与三套皮肤色调；已按官方翻倍扩容后的 **512K 自动压缩线**（旧版 262K → 新版 512K）默认校准，同时支持一键切换至 **1M 模型物理上限**。
 
 ![Gemini Pulse 看板展示](docs/assets/gemini-pulse-showcase.png)
 
