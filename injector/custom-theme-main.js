@@ -13,7 +13,8 @@
 //    to renderers on dom-ready, on bounded startup backoff if Sidecar starts
 //    slightly later, and on port.txt change (zero continuous polling).
 
-const { ipcMain } = require('electron');
+const { ipcMain, Menu, shell, clipboard } = require('electron');
+const { execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -236,6 +237,76 @@ exports.attach = function attach(wc) {
             console.error('[agy-theme] mount failed:', error && error.message);
         }
     }
+
+    function normalizeLocalPathFromMenu(raw) {
+        if (!raw || typeof raw !== 'string') return '';
+        let s = raw.trim().replace(/^["'`]+|["'`]+$/g, '');
+        if (/^file:\/\//i.test(s)) {
+            try {
+                const u = new URL(s);
+                s = decodeURIComponent(u.pathname || '');
+                if (process.platform === 'win32' && /^\/[A-Za-z]:/.test(s)) s = s.slice(1);
+            } catch (_) {
+                s = s.replace(/^file:\/\/\/?/i, '');
+                try { s = decodeURIComponent(s); } catch (_) {}
+            }
+        }
+        s = s.replace(/#L?\d+(?:-L?\d+)?$/i, '').replace(/#.*$/, '').replace(/:(\d+)(?::\d+)?$/, '');
+        if (process.platform === 'win32') s = s.replace(/\//g, '\\');
+        return s;
+    }
+
+    // Native Electron context-menu fallback for file:/// links & selected local paths
+    // (runs only when the renderer custom menu did not preventDefault)
+    wc.on('context-menu', (event, params) => {
+        try {
+            const rawCandidate = (params.linkURL && /^file:\/\//i.test(params.linkURL))
+                ? params.linkURL
+                : ((params.selectionText && /^[A-Za-z]:[\\/][^\r\n]+$/.test(params.selectionText.trim()))
+                    ? params.selectionText.trim()
+                    : '');
+            if (!rawCandidate) return;
+            const filePath = normalizeLocalPathFromMenu(rawCandidate);
+            if (!filePath || !fs.existsSync(filePath)) return;
+            event.preventDefault();
+            const isDir = (() => { try { return fs.statSync(filePath).isDirectory(); } catch (_) { return false; } })();
+            const items = [
+                {
+                    label: isDir ? '打开文件夹' : '在文件夹中显示',
+                    click: () => {
+                        if (isDir) void shell.openPath(filePath);
+                        else shell.showItemInFolder(filePath);
+                    }
+                },
+                {
+                    label: '用默认程序打开',
+                    click: () => { void shell.openPath(filePath); }
+                }
+            ];
+            if (process.platform === 'win32' && !isDir) {
+                items.push({
+                    label: '选择打开方式…',
+                    click: () => {
+                        execFile('rundll32.exe', ['shell32.dll,OpenAs_RunDLL', filePath], { windowsHide: false }, () => {});
+                    }
+                });
+            }
+            items.push(
+                { type: 'separator' },
+                {
+                    label: '复制完整路径',
+                    click: () => { clipboard.writeText(filePath); }
+                }
+            );
+            if (params.selectionText) {
+                items.push({
+                    label: '复制选中文本',
+                    click: () => { clipboard.writeText(params.selectionText); }
+                });
+            }
+            Menu.buildFromTemplate(items).popup();
+        } catch (_) {}
+    });
 
     wc.on('dom-ready', () => {
         generation += 1;

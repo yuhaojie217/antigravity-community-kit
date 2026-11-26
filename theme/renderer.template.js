@@ -450,80 +450,134 @@ body.theme-dark #agy-codex-ctx-btn[data-level="warn"] .codex-ctx-pct { color: #f
 #agy-codex-ctx-btn[data-level="danger"] .codex-ctx-pct { color: #dc2626; font-weight: 600; }
 body.theme-dark #agy-codex-ctx-btn[data-level="danger"] .codex-ctx-pct { color: #f87171; }
 
-/* Codex Hover Popover Card */
+/* Codex Hover Popover Card (Direction B · Ring Gauge Layout v1.1.0) */
 #agy-codex-ctx-popover {
   position: fixed;
   z-index: 999992;
-  width: 282px;
-  padding: 12px 13px 10px;
-  border-radius: 12px;
+  width: 316px;
+  padding: 12px 14px 11px;
+  border-radius: 13px;
   background: #ffffff;
   border: 1px solid var(--gs-line, #e3e8ef);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.13), 0 2px 6px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.11), 0 2px 6px rgba(15, 23, 42, 0.05);
   color: var(--gs-ink, #1f1f1f);
   font-size: 12px;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   display: none;
   pointer-events: auto;
-  animation: codex-pop-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: bottom right;
+  animation: codex-pop-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-body.theme-dark #agy-codex-ctx-popover {
+body.theme-dark #agy-codex-ctx-popover,
+html.dark #agy-codex-ctx-popover {
   background: #171c23;
   border-color: #2a323e;
   color: #e8edf4;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.50);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 #agy-codex-ctx-popover.open {
   display: block;
 }
 #agy-codex-ctx-popover .cpop-head {
-  padding-right: 42px;
-}
-#agy-codex-ctx-popover .pulse-close {
-  position: absolute;
-  top: 7px;
-  right: 8px;
-}
-@keyframes codex-pop-in {
-  from { opacity: 0; transform: translateY(4px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.cpop-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-right: 26px;
 }
-.cpop-title {
-  font-weight: 600;
-  font-size: 12px;
+#agy-codex-ctx-popover .cpop-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+#agy-codex-ctx-popover .pulse-close-x {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--gs-ink-3, #80868b);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+#agy-codex-ctx-popover .pulse-close-x:hover {
+  background: var(--gs-side-hover, rgba(128, 138, 155, 0.14));
   color: var(--gs-ink, #1f1f1f);
 }
-body.theme-dark .cpop-title { color: #e8edf4; }
+@keyframes codex-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cpop-title {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--gs-ink, #1f1f1f);
+}
+body.theme-dark .cpop-title,
+html.dark .cpop-title { color: #e8edf4; }
 .cpop-badge {
   font-size: 10.5px;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 99px;
   background: var(--gs-accent-soft, rgba(26, 115, 232, 0.09));
   color: var(--gs-accent, #1a73e8);
   font-weight: 500;
+  white-space: nowrap;
 }
-.cpop-main {
+.cpop-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid var(--gs-line-soft, #eef2f7);
+}
+body.theme-dark .cpop-ring-row,
+html.dark .cpop-ring-row { border-bottom-color: #242b35; }
+.cpop-big-ring {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cpop-big-ring-pct {
+  position: absolute;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--gs-ink, #1f1f1f);
+}
+body.theme-dark .cpop-big-ring-pct,
+html.dark .cpop-big-ring-pct { color: #e8edf4; }
+.cpop-ring-info {
+  flex: 1;
+  min-width: 0;
+}
+.cpop-ring-top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 7px;
+  gap: 6px;
 }
 .cpop-big {
-  font-size: 16.5px;
-  font-weight: 650;
+  font-size: 15.5px;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 .cpop-big small {
-  font-size: 11.5px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--gs-ink-3, #80868b);
 }
 .cpop-rem {
@@ -531,59 +585,160 @@ body.theme-dark .cpop-title { color: #e8edf4; }
   font-weight: 600;
   color: var(--gs-accent, #1a73e8);
 }
-.cpop-bar {
-  height: 6px;
-  border-radius: 99px;
-  background: rgba(128, 138, 155, 0.15);
-  overflow: hidden;
-  display: flex;
-  gap: 1px;
-  margin-bottom: 8px;
-}
 .cpop-sub {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
   color: var(--gs-ink-2, #5f6368);
+  margin-top: 3px;
 }
-.cpop-div {
-  height: 1px;
-  background: var(--gs-line-soft, #eef2f7);
-  margin: 9px 0;
+.cpop-quota-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
 }
-body.theme-dark .cpop-div { background: #242b35; }
-.cpop-quota-row {
+.cpop-qtile {
+  background: var(--gs-bg-2, #f4f7fb);
+  border: 1px solid var(--gs-line-soft, #eaeff6);
+  border-radius: 9px;
+  padding: 7px 8px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 11.5px;
-  margin-bottom: 4px;
+  gap: 8px;
+  min-width: 0;
 }
-.cpop-foot-btn {
-  margin-top: 8px;
+body.theme-dark .cpop-qtile,
+html.dark .cpop-qtile {
+  background: #1d232d;
+  border-color: #262f3c;
+}
+.cpop-mini-ring {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cpop-mini-val {
+  position: absolute;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.cpop-qtile-info { min-width: 0; }
+.cpop-qtile-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gs-ink, #1f1f1f);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.theme-dark .cpop-qtile-name,
+html.dark .cpop-qtile-name { color: #e8edf4; }
+.cpop-qtile-sub {
+  font-size: 10px;
+  color: var(--gs-ink-3, #80868b);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cpop-foot-link {
+  margin-top: 10px;
+  padding: 8px 2px 0;
   width: 100%;
-  padding: 5px 8px;
-  border-radius: 7px;
-  border: 1px solid var(--gs-line, #e3e8ef);
-  background: var(--gs-bg, #fbfdff);
-  color: var(--gs-ink-2, #5f6368);
+  border: none;
+  border-top: 1px solid var(--gs-line-soft, #eef2f7);
+  background: transparent;
+  color: var(--gs-ink-3, #7b8394);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+  transition: color 0.15s ease;
 }
-body.theme-dark .cpop-foot-btn {
-  background: #1e252f;
-  border-color: #2c3542;
-  color: #9ba4b2;
-}
-.cpop-foot-btn:hover {
-  border-color: var(--gs-accent, #1a73e8);
+body.theme-dark .cpop-foot-link,
+html.dark .cpop-foot-link { border-top-color: #242b35; color: #9ba4b2; }
+.cpop-foot-link:hover {
   color: var(--gs-accent, #1a73e8);
 }
+
+/* --- Local File / Artifact Context Menu (v1.1.0) --- */
+#agy-file-ctx-menu {
+  position: fixed;
+  z-index: 9999998;
+  min-width: 214px;
+  max-width: 300px;
+  padding: 5px;
+  border-radius: 11px;
+  background: #ffffff;
+  border: 1px solid var(--gs-line, #dde5f0);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(15, 23, 42, 0.06);
+  color: var(--gs-ink, #1b1f24);
+  font-size: 12px;
+  display: none;
+  user-select: none;
+  animation: codex-pop-in 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+body.theme-dark #agy-file-ctx-menu,
+html.dark #agy-file-ctx-menu {
+  background: #1a212b;
+  border-color: #2c3543;
+  color: #e8edf4;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.52);
+}
+#agy-file-ctx-menu.open { display: block; }
+.agy-fctx-head {
+  padding: 5px 9px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--gs-line-soft, #eef2f7);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gs-ink-3, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.theme-dark .agy-fctx-head,
+html.dark .agy-fctx-head { border-bottom-color: #27303d; color: #9aa4b2; }
+.agy-fctx-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 6.5px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.agy-fctx-item:hover {
+  background: var(--gs-accent-soft, rgba(26, 115, 232, 0.10));
+  color: var(--gs-accent, #1a73e8);
+}
+.agy-fctx-item svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.agy-fctx-sep {
+  height: 1px;
+  margin: 4px 4px;
+  background: var(--gs-line-soft, #eef2f7);
+}
+body.theme-dark .agy-fctx-sep,
+html.dark .agy-fctx-sep { background: #27303d; }
 
 /* --- Docked Side Pane Drawer for Gemini Pulse --- */
 #agy-pulse-drawer {
@@ -1235,65 +1390,108 @@ function positionCodexPopover() {
   pop.style.top = Math.round(top) + 'px';
 }
 
+function quotaRingColor(pct) {
+  const dark = isHostDarkMode();
+  if (pct > 50) return dark ? '#34d399' : (readThemeMode() === 'claude' ? '#2f855a' : '#16a34a');
+  if (pct >= 20) return dark ? '#fbbf24' : '#d97706';
+  return dark ? '#f87171' : '#dc2626';
+}
+
+function fmtResetCompact(sec) {
+  if (sec === null || sec === undefined || sec < 0) return '';
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.max(1, Math.floor((sec % 3600) / 60));
+  if (d > 0) return d + '天' + h + 'h';
+  if (h > 0) return h + 'h' + m + 'm';
+  return m + 'm';
+}
+
+function buildMiniQuotaTile(name, bucket) {
+  const rem = bucket && Number.isFinite(bucket.remainingPct) ? Math.max(0, Math.min(100, Math.round(bucket.remainingPct))) : null;
+  if (rem === null) return '';
+  const r = 14;
+  const c = 2 * Math.PI * r;
+  const dash = ((rem / 100) * c).toFixed(2);
+  const col = quotaRingColor(rem);
+  const trackCol = isHostDarkMode() ? '#293240' : 'rgba(128,138,155,0.18)';
+  const sub = bucket.resetInSec ? fmtResetCompact(bucket.resetInSec) : (rem >= 100 ? '满额就绪' : '实时额度');
+  return (
+    '<div class="cpop-qtile">' +
+      '<div class="cpop-mini-ring">' +
+        '<svg width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(-90deg)">' +
+          '<circle cx="18" cy="18" r="' + r + '" fill="none" stroke="' + trackCol + '" stroke-width="3.2"/>' +
+          '<circle cx="18" cy="18" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="3.2" stroke-dasharray="' + dash + ' ' + c.toFixed(2) + '" stroke-linecap="round"/>' +
+        '</svg>' +
+        '<span class="cpop-mini-val" style="color:' + col + '">' + rem + '%</span>' +
+      '</div>' +
+      '<div class="cpop-qtile-info">' +
+        '<div class="cpop-qtile-name">' + escHtml(name) + '</div>' +
+        '<div class="cpop-qtile-sub">' + escHtml(sub) + '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
 function renderCodexPopoverContent(payload) {
   const pop = document.getElementById('agy-codex-ctx-content');
   if (!pop) return;
   const m = payload && payload.metrics;
   if (!m) {
     pop.innerHTML =
-      '<div class="cpop-head"><span class="cpop-title">上下文窗口</span><span class="cpop-badge">待就绪</span></div>' +
-      '<div style="color:var(--gs-ink-2);font-size:11.5px;">发送首条消息后即可实时统计上下文构成与模型配额。</div>' +
-      '<button type="button" class="cpop-foot-btn" id="cpopOpenSideBtn"><span>在侧边窗口打开额度看板</span><span>→</span></button>';
+      '<div class="cpop-head"><div class="cpop-title-wrap"><span class="cpop-title">上下文与配额</span><span class="cpop-badge">待就绪</span></div></div>' +
+      '<div style="color:var(--gs-ink-2);font-size:11.5px;padding:4px 0 2px;">发送首条消息后即可实时统计上下文构成与模型配额。</div>' +
+      '<button type="button" class="cpop-foot-link" id="cpopOpenSideBtn"><span>展开侧栏完整明细</span><span>→</span></button>';
   } else {
-    const bList = m.breakdown || [];
-    const barSegs = bList.map((b) => {
-      const w = m.contextLimit > 0 ? Math.max(0.8, (b.tokens / m.contextLimit) * 100) : 0;
-      return '<div style="height:100%;width:' + w.toFixed(1) + '%;background:' + (SEG_COLOR_HEX[b.key] || '#1a73e8') + '"></div>';
-    }).join('');
+    const usedPct = Math.max(0, Math.min(100, Number(m.contextPct || 0)));
+    const r = 18;
+    const c = 2 * Math.PI * r;
+    const usedLen = ((usedPct / 100) * c).toFixed(2);
+    const ringCol = usedPct >= 82 ? (isHostDarkMode() ? '#f87171' : '#dc2626')
+      : (usedPct >= 60 ? (isHostDarkMode() ? '#fbbf24' : '#d97706') : 'var(--gs-accent, #1a73e8)');
+    const trackCol = isHostDarkMode() ? '#293240' : 'rgba(128,138,155,0.18)';
 
     const rate = m.latestStepTokPerSec > 0 ? m.latestStepTokPerSec : (m.avgTokPerSec || 0);
     const activePool = payload.quota && payload.quota.activePool;
     let quotaHtml = '';
-    if (activePool && (activePool.window5h || activePool.windowWeekly)) {
-      const qRows = [];
-      if (Number.isFinite(activePool.window5h?.remainingPct)) {
-        const rst = fmtResetShort(activePool.window5h.resetInSec);
-        qRows.push(
-          '<div class="cpop-quota-row">' +
-            '<span style="color:var(--gs-ink-2)">' + escHtml(activePool.label) + ' · 5h</span>' +
-            '<span><strong>剩余 ' + activePool.window5h.remainingPct + '%</strong>' + (rst ? ' <small style="color:var(--gs-ink-3)">(' + escHtml(rst) + ')</small>' : '') + '</span>' +
-          '</div>'
-        );
+    if (activePool) {
+      const t1 = buildMiniQuotaTile('5h 额度', activePool.window5h);
+      const t2 = buildMiniQuotaTile('每周余量', activePool.windowWeekly);
+      if (t1 || t2) {
+        const cols = (t1 && t2) ? 'repeat(2,1fr)' : '1fr';
+        quotaHtml = '<div class="cpop-quota-grid" style="grid-template-columns:' + cols + '">' + t1 + t2 + '</div>';
       }
-      if (Number.isFinite(activePool.windowWeekly?.remainingPct)) {
-        const weeklyReset = fmtResetShort(activePool.windowWeekly.resetInSec);
-        qRows.push(
-          '<div class="cpop-quota-row">' +
-            '<span style="color:var(--gs-ink-2)">每周池余量</span>' +
-            '<span><strong>剩余 ' + activePool.windowWeekly.remainingPct + '%</strong>' + (weeklyReset ? ' <small>(' + escHtml(weeklyReset) + ')</small>' : '') + '</span>' +
-          '</div>'
-        );
-      }
-      if (qRows.length) quotaHtml = '<div class="cpop-div"></div>' + qRows.join('');
     }
 
     const shortModel = (m.activeModelLabel || 'Gemini').replace(/^Gemini\s+/i, '');
     pop.innerHTML =
       '<div class="cpop-head">' +
-        '<span class="cpop-title">上下文窗口</span>' +
-        '<span class="cpop-badge">' + escHtml(shortModel) + '</span>' +
+        '<div class="cpop-title-wrap">' +
+          '<span class="cpop-title">上下文与配额</span>' +
+          '<span class="cpop-badge">' + escHtml(shortModel) + '</span>' +
+        '</div>' +
       '</div>' +
-      '<div class="cpop-main">' +
-        '<span class="cpop-big">' + fmtCompact(m.latestContextTokens) + ' <small>/ ' + fmtCompact(m.contextLimit) + '</small></span>' +
-        '<span class="cpop-rem">剩余 ' + m.remainingPct + '%</span>' +
-      '</div>' +
-      '<div class="cpop-bar">' + barSegs + '</div>' +
-      '<div class="cpop-sub">' +
-        '<span>缓存命中 ' + Math.round(m.latestCacheHitPct || m.avgCacheHitPct || 0) + '%</span>' +
-        '<span>' + (rate > 0 ? rate.toFixed(1) + ' tok/s' : m.steps + ' 步推理') + '</span>' +
+      '<div class="cpop-ring-row">' +
+        '<div class="cpop-big-ring">' +
+          '<svg width="46" height="46" viewBox="0 0 46 46" style="transform:rotate(-90deg)">' +
+            '<circle cx="23" cy="23" r="' + r + '" fill="none" stroke="' + trackCol + '" stroke-width="4.2"/>' +
+            '<circle cx="23" cy="23" r="' + r + '" fill="none" stroke="' + ringCol + '" stroke-width="4.2" stroke-dasharray="' + usedLen + ' ' + c.toFixed(2) + '" stroke-linecap="round"/>' +
+          '</svg>' +
+          '<span class="cpop-big-ring-pct">' + Math.round(usedPct) + '%</span>' +
+        '</div>' +
+        '<div class="cpop-ring-info">' +
+          '<div class="cpop-ring-top">' +
+            '<span class="cpop-big">' + fmtCompact(m.latestContextTokens) + ' <small>/ ' + fmtCompact(m.contextLimit) + '</small></span>' +
+            '<span class="cpop-rem" style="color:' + ringCol + '">剩 ' + m.remainingPct + '%</span>' +
+          '</div>' +
+          '<div class="cpop-sub">' +
+            '<span>缓存 ' + Math.round(m.latestCacheHitPct || m.avgCacheHitPct || 0) + '%</span>' +
+            '<span>' + (rate > 0 ? rate.toFixed(1) + ' tok/s' : m.steps + ' 步推理') + '</span>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       quotaHtml +
-      '<button type="button" class="cpop-foot-btn" id="cpopOpenSideBtn"><span>在右侧窗口查看完整配额与 7 日明细</span><span>→</span></button>';
+      '<button type="button" class="cpop-foot-link" id="cpopOpenSideBtn"><span>展开侧栏完整明细</span><span>→</span></button>';
   }
 
   const openBtn = pop.querySelector('#cpopOpenSideBtn');
@@ -1440,8 +1638,12 @@ function mountCodexRingAndTopTheme() {
             pop = document.createElement('div');
             pop.id = 'agy-codex-ctx-popover';
             pop.className = 'notranslate';
-            pop.innerHTML = '<div id="agy-codex-ctx-content"></div><button type="button" class="pulse-close" aria-label="关闭速览">关闭</button>';
-            pop.querySelector('.pulse-close').addEventListener('click', () => closePulseViews(true));
+            pop.innerHTML =
+              '<div id="agy-codex-ctx-content"></div>' +
+              '<button type="button" class="pulse-close-x" aria-label="关闭速览" title="关闭">' +
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+              '</button>';
+            pop.querySelector('.pulse-close-x').addEventListener('click', () => closePulseViews(true));
             pop.addEventListener('mouseenter', () => window.clearTimeout(popHideTimer));
             pop.addEventListener('mouseleave', () => {
               popHideTimer = window.setTimeout(() => pop.classList.remove('open'), 160);
@@ -1510,6 +1712,243 @@ function mountCodexRingAndTopTheme() {
   }
 }
 
+// ==================== Part 4.5: Local File & Artifact Context Menu ====================
+
+function normalizeClientFilePath(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  let s = raw.trim().replace(/^["'`]+|["'`]+$/g, '');
+  if (!s) return '';
+  if (/^file:\/\//i.test(s)) {
+    try {
+      const u = new URL(s);
+      s = decodeURIComponent(u.pathname || '');
+      if (/^\/[A-Za-z]:/.test(s)) s = s.slice(1);
+    } catch (_) {
+      s = s.replace(/^file:\/\/\/?/i, '');
+      try { s = decodeURIComponent(s); } catch (_) {}
+    }
+  }
+  s = s.replace(/#L?\d+(?:-L?\d+)?$/i, '').replace(/#.*$/, '').replace(/:(\d+)(?::\d+)?$/, '');
+  if (/^[A-Za-z]:[\\/]/.test(s)) s = s.replace(/\//g, '\\');
+  return s;
+}
+
+function getCurrentConvIdFromHost() {
+  const m = (window.location.href || '').match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  if (m) return m[0];
+  return (window.__agyLastTelemetry && window.__agyLastTelemetry.activeConversationId) || '';
+}
+
+function detectFileContextTarget(target) {
+  if (!(target instanceof Element)) return null;
+  if (target.closest('#agy-file-ctx-menu, #hakimi-muse-stage, #agy-pulse-drawer, #agy-codex-ctx-popover')) return null;
+
+  // 1. Direct file:/// anchor link
+  const a = target.closest('a[href]');
+  if (a) {
+    const href = a.getAttribute('href') || '';
+    if (/^file:\/\//i.test(href)) {
+      const fp = normalizeClientFilePath(href);
+      if (fp) return { path: fp, label: (a.textContent || '').trim() || fp.split(/[\\/]/).pop() };
+    }
+  }
+
+  // 2. Selected Windows/POSIX absolute file path text or <code> path
+  const selText = (window.getSelection ? String(window.getSelection()) : '').trim();
+  const winPathRx = /^[A-Za-z]:[\\/][^<>:"|?*\r\n]{2,260}$/;
+  if (selText && winPathRx.test(selText)) {
+    const fp = normalizeClientFilePath(selText);
+    return { path: fp, label: fp.split(/[\\/]/).pop(), selText };
+  }
+  const codeEl = target.closest('code');
+  if (codeEl) {
+    const ct = (codeEl.textContent || '').trim();
+    if (winPathRx.test(ct)) {
+      const fp = normalizeClientFilePath(ct);
+      return { path: fp, label: fp.split(/[\\/]/).pop(), selText };
+    }
+  }
+
+  // 3. Antigravity Artifact card (e.g. rounded card inside chat containing a file icon + title + summary)
+  const inChat = target.closest('main, [data-quotable="true"], [data-testid*="conversation"], [data-testid*="message"]');
+  if (inChat) {
+    let el = target;
+    for (let depth = 0; depth < 7 && el && el !== inChat; depth += 1) {
+      const attrPath = el.getAttribute('data-path') || el.getAttribute('data-file-path') || el.getAttribute('data-uri') || el.getAttribute('title') || '';
+      if (/^file:\/\//i.test(attrPath) || winPathRx.test(attrPath.trim())) {
+        const fp = normalizeClientFilePath(attrPath);
+        return { path: fp, label: fp.split(/[\\/]/).pop(), selText };
+      }
+      const cls = String(el.className || '');
+      const hasCardLook = /rounded-(?:lg|xl|2xl)|border|cursor-pointer/.test(cls);
+      const hasSvg = !!el.querySelector('svg');
+      if (hasCardLook && hasSvg && !el.closest('.surface-composer, [role="navigation"]') && !el.querySelector('pre, textarea, input')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width >= 180 && rect.width <= 960 && rect.height >= 44 && rect.height <= 260) {
+          const lines = (el.innerText || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+          if (lines.length >= 1 && lines.length <= 8 && lines[0].length >= 2 && lines[0].length <= 90) {
+            const firstLine = lines[0];
+            if (!/^(Copy|复制|Working|Thought|思考)$/i.test(firstLine)) {
+              return { artifactTitle: firstLine, convId: getCurrentConvIdFromHost(), label: firstLine, selText };
+            }
+          }
+        }
+      }
+      el = el.parentElement;
+    }
+  }
+  return null;
+}
+
+async function callLocalOpenApi(payload) {
+  const port = normalizeTelemetryPort(window.__agyTelemetryPort);
+  if (!port) return { ok: false, error: 'no_port' };
+  try {
+    const res = await fetch('http://127.0.0.1:' + port + '/api/local-open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  }
+}
+
+function closeFileCtxMenu() {
+  const m = document.getElementById('agy-file-ctx-menu');
+  if (m) m.classList.remove('open');
+}
+
+function showFileCtxMenu(x, y, resolved, selText) {
+  let menu = document.getElementById('agy-file-ctx-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'agy-file-ctx-menu';
+    menu.className = 'notranslate';
+    document.body.appendChild(menu);
+  }
+  const filePath = resolved.path;
+  const isDir = !!resolved.isDirectory;
+  const titleName = resolved.name || filePath.split(/[\\/]/).pop() || filePath;
+
+  const iconFolder = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+  const iconOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
+  const iconApps = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>';
+  const iconCopy = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+
+  menu.innerHTML =
+    '<div class="agy-fctx-head" title="' + escHtml(filePath) + '">' + escHtml(titleName) + '</div>' +
+    '<button type="button" class="agy-fctx-item" data-act="reveal">' + iconFolder + '<span>' + (isDir ? '打开文件夹' : '在文件夹中显示') + '</span></button>' +
+    '<button type="button" class="agy-fctx-item" data-act="open">' + iconOpen + '<span>用默认程序打开</span></button>' +
+    (isDir ? '' : '<button type="button" class="agy-fctx-item" data-act="open-with">' + iconApps + '<span>选择打开方式…</span></button>') +
+    '<div class="agy-fctx-sep"></div>' +
+    '<button type="button" class="agy-fctx-item" data-act="copy-path">' + iconCopy + '<span>复制完整路径</span></button>' +
+    (selText ? '<button type="button" class="agy-fctx-item" data-act="copy-sel">' + iconCopy + '<span>复制选中文字</span></button>' : '');
+
+  menu.querySelectorAll('.agy-fctx-item').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const act = btn.getAttribute('data-act');
+      closeFileCtxMenu();
+      if (act === 'copy-path') {
+        try { await navigator.clipboard.writeText(filePath); say('已复制路径', 1400); } catch (_) {}
+      } else if (act === 'copy-sel' && selText) {
+        try { await navigator.clipboard.writeText(selText); } catch (_) {}
+      } else if (act === 'reveal' || act === 'open' || act === 'open-with') {
+        const res = await callLocalOpenApi({ action: act, path: filePath });
+        if (!res || !res.ok) say('打开失败，文件可能已被移动', 2000);
+      }
+    });
+  });
+
+  menu.classList.add('open');
+  const mw = menu.offsetWidth || 224;
+  const mh = menu.offsetHeight || 190;
+  const left = Math.max(8, Math.min(window.innerWidth - mw - 8, x));
+  const top = Math.max(8, Math.min(window.innerHeight - mh - 8, y));
+  menu.style.left = Math.round(left) + 'px';
+  menu.style.top = Math.round(top) + 'px';
+}
+
+function bindLocalFileContextMenu() {
+  if (window.__AGY_FILE_CTX_BOUND__) return;
+  window.__AGY_FILE_CTX_BOUND__ = true;
+
+  const artifactCache = new Map();
+
+  function preResolveArtifact(title, convId) {
+    const cacheKey = (convId || '') + '::' + title;
+    const hit = artifactCache.get(cacheKey);
+    if (hit && Date.now() - hit.at < 8000) return hit;
+    const entry = { at: Date.now(), pending: true, res: null };
+    artifactCache.set(cacheKey, entry);
+    void callLocalOpenApi({ action: 'resolve', artifactTitle: title, convId: convId || '' }).then((res) => {
+      entry.pending = false;
+      entry.res = res && res.ok && res.path ? res : null;
+      entry.at = Date.now();
+    });
+    return entry;
+  }
+
+  // Pre-resolve artifact cards on right-button press (~80-150ms before contextmenu fires)
+  // so non-artifact cards are NEVER falsely intercepted!
+  document.addEventListener('mousedown', (event) => {
+    if (event.button !== 2) return;
+    if (!normalizeTelemetryPort(window.__agyTelemetryPort)) return;
+    const info = detectFileContextTarget(event.target);
+    if (info && info.artifactTitle && !info.path) {
+      preResolveArtifact(info.artifactTitle, info.convId || '');
+    }
+  }, true);
+
+  document.addEventListener('contextmenu', (event) => {
+    closeFileCtxMenu();
+    if (!normalizeTelemetryPort(window.__agyTelemetryPort)) return; // Let Electron native fallback handle it
+    const info = detectFileContextTarget(event.target);
+    if (!info) return;
+
+    // 1. Direct file:/// links or explicit local paths: intercept immediately
+    if (info.path) {
+      event.preventDefault();
+      event.stopPropagation();
+      const cx = event.clientX;
+      const cy = event.clientY;
+      void callLocalOpenApi({ action: 'resolve', path: info.path }).then((res) => {
+        if (res && res.ok && res.path) {
+          showFileCtxMenu(cx, cy, res, info.selText || '');
+        } else {
+          showFileCtxMenu(cx, cy, { path: info.path, name: info.label, isDirectory: false }, info.selText || '');
+        }
+      });
+      return;
+    }
+
+    // 2. Artifact cards: intercept ONLY when pre-resolved to a real backing file in brain/
+    if (info.artifactTitle) {
+      const cacheKey = (info.convId || '') + '::' + info.artifactTitle;
+      const entry = artifactCache.get(cacheKey);
+      if (entry && entry.res && entry.res.path) {
+        event.preventDefault();
+        event.stopPropagation();
+        showFileCtxMenu(event.clientX, event.clientY, entry.res, info.selText || '');
+      } else {
+        preResolveArtifact(info.artifactTitle, info.convId || '');
+      }
+    }
+  }, true);
+
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target instanceof Element && e.target.closest('#agy-file-ctx-menu')) return;
+    closeFileCtxMenu();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFileCtxMenu();
+  }, true);
+  window.addEventListener('scroll', closeFileCtxMenu, true);
+  window.addEventListener('blur', closeFileCtxMenu);
+}
+
 // ==================== Part 5: Observer & Public API ====================
 
 function ensureObserver() {
@@ -1528,7 +1967,7 @@ function ensureObserver() {
     if (needsRing || needsTheme) mountCodexRingAndTopTheme();
     layoutMuseStage();
   }
-  const ownControls = '#hakimi-muse-stage, #hakimi-say, #agy-inline-theme-btn, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer';
+  const ownControls = '#hakimi-muse-stage, #hakimi-say, #agy-inline-theme-btn, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-file-ctx-menu';
   const observer = new MutationObserver((mutations) => {
     let hostChanged = false;
     for (let i = 0; i < mutations.length; i++) {
@@ -1580,5 +2019,6 @@ scan(document.body);
 ensureObserver();
 mountCodexRingAndTopTheme();
 mountMuseHakimi();
+bindLocalFileContextMenu();
 
 return 'AGY_MUSE_PULSE_OK';

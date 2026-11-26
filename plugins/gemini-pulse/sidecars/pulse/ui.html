@@ -6,8 +6,9 @@
   <title>额度与上下文 · Gemini Pulse</title>
   <style>
     /* ==========================================================================
-       Gemini Pulse · Editorial Precision Inspector
-       Aligned with Hakimi Google Dawn (#fbfdff), Claude Paper (#faf9f5) & Dark (#101418)
+       Gemini Pulse · Direction A Refined Inspector (v1.1.0)
+       Harmonized monochromatic segment palette, hairline cards, semantic quota
+       thresholds (>50% good / 20-50% warn / <20% danger) & zero-dep micro-motion.
        ========================================================================== */
     :root,
     html[data-surface="google"] {
@@ -18,22 +19,22 @@
       --ink-secondary: #525866;
       --ink-muted: #7b8394;
       --line: #e3e8ef;
-      --line-subtle: #eef2f7;
+      --line-subtle: #edf2f8;
       --accent: #1a73e8;
       --accent-soft: rgba(26, 115, 232, 0.09);
       --accent-ring: rgba(26, 115, 232, 0.24);
       --good: #16a34a;
       --warn: #d97706;
       --danger: #dc2626;
-      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(26, 115, 232, 0.04);
-      --shadow-pop: 0 8px 24px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+      --quota-good: #16a34a;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.035);
 
-      /* Context segment palette */
-      --seg-tools: #0d9488;
-      --seg-messages: #2563eb;
-      --seg-system: #d97706;
-      --seg-rules: #64748b;
-      --seg-thinking: #7c3aed;
+      /* Harmonized Google blue gradient + cool neutral + soft violet */
+      --seg-tools: #1a73e8;
+      --seg-messages: #669df6;
+      --seg-system: #64748b;
+      --seg-rules: #94a3b8;
+      --seg-thinking: #8b74d9;
       --seg-track: #edf1f7;
     }
 
@@ -49,12 +50,18 @@
       --accent: #c96442;
       --accent-soft: rgba(201, 100, 66, 0.10);
       --accent-ring: rgba(201, 100, 66, 0.26);
-      --shadow-sm: 0 1px 2px rgba(41, 39, 36, 0.04), 0 4px 12px rgba(41, 39, 36, 0.04);
-      --seg-messages: #c96442;
-      --seg-tools: #2f855a;
-      --seg-thinking: #805ad5;
-      --seg-system: #b7791f;
-      --seg-rules: #718096;
+      --good: #2f855a;
+      --warn: #c07a1a;
+      --danger: #c53030;
+      --quota-good: #2f855a;
+      --shadow-sm: 0 1px 2px rgba(41, 39, 36, 0.035);
+
+      /* Warm terracotta gradient + stone neutral + muted plum */
+      --seg-tools: #c96442;
+      --seg-messages: #e09175;
+      --seg-system: #736d63;
+      --seg-rules: #a69f93;
+      --seg-thinking: #9274b8;
       --seg-track: #ede9df;
     }
 
@@ -73,12 +80,14 @@
       --good: #34d399;
       --warn: #fbbf24;
       --danger: #f87171;
-      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
-      --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.45);
-      --seg-tools: #2dd4bf;
-      --seg-messages: #60a5fa;
-      --seg-system: #fbbf24;
-      --seg-rules: #94a3b8;
+      --quota-good: #34d399;
+      --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.22);
+
+      /* Cool ice-blue gradient + slate neutral + soft violet */
+      --seg-tools: #7cacf8;
+      --seg-messages: #4876ba;
+      --seg-system: #7b8494;
+      --seg-rules: #4e5766;
       --seg-thinking: #a78bfa;
       --seg-track: #222933;
     }
@@ -112,6 +121,7 @@
       -webkit-font-smoothing: antialiased;
       font-variant-numeric: tabular-nums;
       min-height: 100vh;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     button, select {
@@ -134,15 +144,15 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 10px 14px;
+      padding: 9px 13px;
       background: var(--bg);
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--line-subtle);
     }
 
     .session-picker {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       min-width: 0;
       flex: 1;
     }
@@ -153,12 +163,24 @@
       border-radius: 50%;
       background: var(--good);
       flex-shrink: 0;
-      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.14);
+      position: relative;
       transition: background 0.2s ease;
+    }
+    .live-dot::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: var(--good);
+      opacity: 0.28;
+      animation: livePulse 2.4s ease-in-out infinite;
     }
     .live-dot.offline {
       background: var(--warn);
-      box-shadow: none;
+    }
+    .live-dot.offline::after {
+      animation: none;
+      opacity: 0;
     }
 
     .conv-select {
@@ -168,7 +190,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 4px 24px 4px 9px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 500;
       color: var(--ink);
       max-width: 100%;
@@ -185,34 +207,57 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       flex-shrink: 0;
     }
 
+    /* Animated Sliding Segmented Tabs */
     .seg-tabs {
-      display: inline-flex;
+      position: relative;
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
       background: var(--surface-subtle);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 2px;
+      width: 84px;
+    }
+
+    .seg-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: calc(50% - 2px);
+      height: calc(100% - 4px);
+      background: var(--surface);
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+
+    .seg-tabs[data-tab="trend"] .seg-slider {
+      transform: translateX(100%);
     }
 
     .seg-tab {
+      position: relative;
+      z-index: 1;
       border: none;
       background: transparent;
-      padding: 3px 9px;
+      padding: 3px 0;
       border-radius: 6px;
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--ink-secondary);
+      text-align: center;
       cursor: pointer;
-      transition: background 0.16s ease, color 0.16s ease;
+      transition: color 0.16s ease;
     }
     .seg-tab:hover { color: var(--ink); }
     .seg-tab.active {
-      background: var(--surface);
       color: var(--ink);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      font-weight: 600;
     }
 
     .icon-btn {
@@ -233,86 +278,99 @@
       border-color: var(--accent-ring);
       background: var(--accent-soft);
     }
-    .icon-btn svg { width: 13.5px; height: 13.5px; }
-    .icon-btn.spinning svg { animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .icon-btn svg { width: 13px; height: 13px; }
+    .icon-btn.spinning svg { animation: spinOnce 0.52s cubic-bezier(0.22, 1, 0.36, 1); }
 
     /* Main Content Container */
     .wrap {
       max-width: 680px;
       margin: 0 auto;
-      padding: 14px 14px 28px;
+      padding: 12px 13px 24px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 11px;
     }
 
+    /* Direction A Refined Hairline Cards */
     .panel-block {
       background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 15px;
+      border: 1px solid var(--line-subtle);
+      border-radius: 11px;
+      padding: 12px 13px;
       box-shadow: var(--shadow-sm);
     }
 
     .sec-head {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 11px;
+      margin-bottom: 9px;
     }
 
     .sec-title {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--ink);
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
     }
 
     .sec-meta {
-      font-size: 11.5px;
-      color: var(--ink-secondary);
+      font-size: 11px;
+      color: var(--ink-muted);
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .reset-chip {
+      font-size: 10px;
+      color: var(--ink-muted);
+      background: var(--surface-subtle);
+      padding: 1px 7px;
+      border-radius: 99px;
+      white-space: nowrap;
     }
 
     .cap-pill {
       border: 1px solid var(--line);
       background: var(--surface-subtle);
-      color: var(--ink-secondary);
+      color: var(--ink-muted);
       border-radius: 99px;
-      padding: 1px 8px;
-      font-size: 11px;
+      padding: 2px 8px;
+      font-size: 10.5px;
       cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
     }
     .cap-pill:hover {
       border-color: var(--accent);
       color: var(--accent);
+      background: var(--accent-soft);
     }
 
-    /* Context Window Headline & Segmented Proportional Bar */
+    /* Context Window Headline & Segmented Breathing Bar */
     .ctx-headline {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      margin-bottom: 9px;
+      margin-bottom: 8px;
     }
 
     .ctx-primary-num {
-      font-size: 21px;
-      font-weight: 650;
+      font-size: 20px;
+      font-weight: 700;
       letter-spacing: -0.025em;
       line-height: 1.15;
+      color: var(--ink);
     }
 
     .ctx-primary-num small {
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 500;
       color: var(--ink-muted);
       margin-left: 3px;
@@ -322,50 +380,61 @@
       font-size: 12px;
       font-weight: 600;
       color: var(--accent);
+      transition: color 0.3s ease;
     }
     .ctx-rem-badge.warn { color: var(--warn); }
     .ctx-rem-badge.danger { color: var(--danger); }
 
     .seg-bar-track {
-      height: 9px;
+      height: 8px;
       width: 100%;
       background: var(--seg-track);
       border-radius: 99px;
+      padding: 1px;
       overflow: hidden;
       display: flex;
-      gap: 1.5px;
-      margin-bottom: 12px;
+      align-items: stretch;
+      gap: 2px;
+      margin-bottom: 10px;
     }
 
     .seg-piece {
       height: 100%;
-      min-width: 2px;
-      transition: width 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, filter 0.18s ease;
+      min-width: 3px;
+      border-radius: 99px;
+      transform-origin: left center;
+      cursor: pointer;
+      transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease, filter 0.18s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .seg-bar-track.dimming .seg-piece:not(.active) {
-      opacity: 0.28;
+    .seg-piece.enter {
+      transform: scaleX(0);
     }
-    .seg-bar-track.dimming .seg-piece.active {
-      filter: brightness(1.06);
+    .seg-bar-track.has-hover .seg-piece:not(.is-active) {
+      opacity: 0.24;
+    }
+    .seg-bar-track.has-hover .seg-piece.is-active {
+      filter: brightness(1.08);
     }
 
     .legend-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-      gap: 4px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .legend-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 3.5px 6px;
+      padding: 2.5px 6px;
       margin: 0 -6px;
       border-radius: 6px;
       font-size: 12px;
-      cursor: default;
-      transition: background 0.14s ease;
+      cursor: pointer;
+      transition: background 0.15s ease, opacity 0.18s ease;
     }
+    .legend-row.is-dimmed { opacity: 0.35; }
+    .legend-row.is-active,
     .legend-row:hover {
       background: var(--surface-subtle);
     }
@@ -379,33 +448,37 @@
     }
 
     .swatch {
-      width: 7.5px;
-      height: 7.5px;
-      border-radius: 2.5px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       flex-shrink: 0;
     }
 
     .legend-val {
-      color: var(--ink);
-      font-weight: 500;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
       white-space: nowrap;
     }
-    .legend-val em {
-      font-style: normal;
+    .legend-tok {
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .legend-pct {
       color: var(--ink-muted);
-      font-weight: 400;
-      margin-left: 4px;
       font-size: 11px;
+      min-width: 36px;
+      text-align: right;
     }
 
     /* Inline 3-column Vital Strip */
     .vital-strip {
-      margin-top: 12px;
-      padding-top: 11px;
+      margin-top: 11px;
+      padding-top: 10px;
       border-top: 1px solid var(--line-subtle);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
     .vital-item {
@@ -415,28 +488,28 @@
     }
 
     .vital-label {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--ink-muted);
     }
 
     .vital-num {
-      font-size: 13.5px;
+      font-size: 12.5px;
       font-weight: 600;
       color: var(--ink);
     }
 
-    /* Quota Pools Ledger */
+    /* Quota Pools Ledger with Semantic Threshold Colors */
     .quota-list {
       display: flex;
       flex-direction: column;
-      gap: 13px;
+      gap: 11px;
     }
 
     .quota-pool {
       display: flex;
       flex-direction: column;
       gap: 7px;
-      padding-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--line-subtle);
     }
     .quota-pool:last-child {
@@ -452,17 +525,18 @@
     }
 
     .pool-name {
-      font-size: 12.5px;
+      font-size: 11.5px;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      color: var(--ink);
     }
 
     .pool-tag {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 500;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: 99px;
       background: var(--accent-soft);
       color: var(--accent);
@@ -477,16 +551,29 @@
     .bucket-meta {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
+      gap: 8px;
       font-size: 11.5px;
     }
 
     .bucket-kind { color: var(--ink-secondary); }
-    .bucket-stat { font-weight: 500; color: var(--ink); }
-    .bucket-stat span { color: var(--ink-muted); font-weight: 400; margin-left: 6px; font-size: 11px; }
+    .bucket-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bucket-stat {
+      font-weight: 600;
+      color: var(--ink);
+      transition: color 0.35s ease;
+    }
+    .bucket-stat.good { color: var(--quota-good); }
+    .bucket-stat.warn { color: var(--warn); }
+    .bucket-stat.danger { color: var(--danger); }
+    .bucket-stat.muted { color: var(--ink-muted); font-weight: 500; }
 
     .meter-track {
-      height: 5.5px;
+      height: 5px;
       width: 100%;
       background: var(--seg-track);
       border-radius: 99px;
@@ -496,11 +583,12 @@
     .meter-fill {
       height: 100%;
       border-radius: 99px;
-      background: var(--accent);
-      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+      background: var(--quota-good);
+      transition: width 0.52s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.38s ease;
     }
     .meter-fill.warn { background: var(--warn); }
     .meter-fill.danger { background: var(--danger); }
+    .meter-fill.accent { background: var(--accent); }
 
     .quota-empty {
       padding: 10px 12px;
@@ -517,7 +605,7 @@
     /* Recent Step Stream Table */
     .table-scroll {
       overflow-x: auto;
-      margin: 0 -4px;
+      margin: 0 -2px;
     }
 
     table {
@@ -529,43 +617,44 @@
     th {
       text-align: right;
       font-weight: 500;
+      font-size: 10.5px;
       color: var(--ink-muted);
-      padding: 5px 6px 7px;
-      border-bottom: 1px solid var(--line);
+      padding: 2px 4px 6px;
+      border-bottom: 1px solid var(--line-subtle);
       white-space: nowrap;
     }
     th:first-child, td:first-child { text-align: left; }
 
     td {
       text-align: right;
-      padding: 6px 6px;
+      padding: 6px 4px;
       border-bottom: 1px solid var(--line-subtle);
       color: var(--ink-secondary);
       white-space: nowrap;
     }
-    tr:last-child td { border-bottom: none; }
+    tr:last-child td { border-bottom: none; padding-bottom: 1px; }
     tr:hover td { background: var(--surface-subtle); color: var(--ink); }
 
     .step-num { font-weight: 600; color: var(--ink); }
     .mod-tag {
       color: var(--ink-muted);
-      font-size: 11px;
+      font-size: 10.5px;
       margin-left: 5px;
     }
 
     /* 7-Day Trend View */
     .chart-box {
-      padding: 6px 0 2px;
+      padding: 4px 0 2px;
     }
 
     .bars-grid {
-      height: 132px;
+      height: 128px;
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 8px;
       align-items: end;
-      padding-top: 12px;
-      border-bottom: 1px solid var(--line);
+      padding-top: 10px;
+      border-bottom: 1px solid var(--line-subtle);
     }
 
     .day-col {
@@ -574,13 +663,13 @@
       flex-direction: column;
       justify-content: flex-end;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       cursor: default;
     }
 
     .stack-col {
       width: 100%;
-      max-width: 28px;
+      max-width: 26px;
       border-radius: 5px 5px 2px 2px;
       overflow: hidden;
       display: flex;
@@ -590,19 +679,19 @@
     }
     .day-col:hover .stack-col { transform: translateY(-2px); }
 
-    .st-cache { background: var(--seg-tools); opacity: 0.85; }
+    .st-cache { background: var(--seg-tools); opacity: 0.88; }
     .st-in { background: var(--seg-messages); }
     .st-out { background: var(--seg-thinking); }
 
     .day-lbl {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--ink-muted);
       padding-top: 5px;
     }
     .day-val-top {
-      font-size: 10.5px;
+      font-size: 10px;
       color: var(--ink-secondary);
-      min-height: 15px;
+      min-height: 14px;
     }
 
     .rank-list {
@@ -618,12 +707,29 @@
     .rank-head {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 11.5px;
     }
     .rank-name { font-weight: 500; color: var(--ink); }
     .rank-tok { color: var(--ink-secondary); }
 
     .hidden { display: none !important; }
+
+    /* Keyframes & Reduced Motion */
+    @keyframes livePulse {
+      0%, 100% { transform: scale(1); opacity: 0.30; }
+      50% { transform: scale(1.75); opacity: 0.05; }
+    }
+    @keyframes spinOnce {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -635,7 +741,8 @@
       </select>
     </div>
     <div class="top-actions">
-      <div class="seg-tabs" role="tablist">
+      <div class="seg-tabs" id="segTabs" data-tab="live" role="tablist">
+        <span class="seg-slider"></span>
         <button type="button" class="seg-tab active" data-tab="live" role="tab">实时</button>
         <button type="button" class="seg-tab" data-tab="trend" role="tab">7日</button>
       </div>
@@ -650,7 +757,7 @@
 
   <main class="wrap">
     <!-- TAB 1: LIVE INSPECTOR -->
-    <div id="tabLive" style="display:flex;flex-direction:column;gap:14px;">
+    <div id="tabLive" style="display:flex;flex-direction:column;gap:11px;">
       <!-- Section A: Context Window -->
       <section class="panel-block">
         <div class="sec-head">
@@ -659,15 +766,15 @@
             <span id="activeModelBadge" class="pool-tag">Gemini</span>
           </h2>
           <div class="sec-meta">
-            <button type="button" class="cap-pill" id="capModeBtn" title="点击在「自动压缩阈值 512K」与「模型物理上限 1M」之间切换">
-              压缩线 512K
+            <button type="button" class="cap-pill" id="capModeBtn" title="点击在「自动压缩阈值 524K」与「模型物理上限 1M」之间切换">
+              压缩阈值 524K
             </button>
           </div>
         </div>
 
         <div class="ctx-headline">
           <div class="ctx-primary-num" id="ctxMainNum">
-            -- <small>/ 512K</small>
+            -- <small>/ 524K</small>
           </div>
           <div class="ctx-rem-badge" id="ctxRemBadge">剩余 --%</div>
         </div>
@@ -695,7 +802,7 @@
       <section class="panel-block">
         <div class="sec-head">
           <h2 class="sec-title">模型配额池</h2>
-          <span class="sec-meta" id="quotaStatusMeta">实时同步</span>
+          <span class="reset-chip" id="quotaStatusMeta">条长代表剩余</span>
         </div>
         <div class="quota-list" id="quotaList">
           <div class="quota-empty">正在读取配额池状态…</div>
@@ -706,7 +813,7 @@
       <section class="panel-block">
         <div class="sec-head">
           <h2 class="sec-title">最近推理步骤</h2>
-          <span class="sec-meta" id="turnsMeta">- 轮 · - 步</span>
+          <span class="reset-chip" id="turnsMeta">- 轮 · - 步</span>
         </div>
         <div class="table-scroll">
           <table>
@@ -715,12 +822,12 @@
                 <th>步序 / 模型</th>
                 <th>上下文</th>
                 <th>输出</th>
-                <th>缓存命中</th>
+                <th>缓存</th>
                 <th>速率</th>
               </tr>
             </thead>
             <tbody id="stepsTbody">
-              <tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:14px 0;">暂无步骤记录</td></tr>
+              <tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:12px 0;">暂无步骤记录</td></tr>
             </tbody>
           </table>
         </div>
@@ -728,17 +835,17 @@
     </div>
 
     <!-- TAB 2: 7-DAY TREND -->
-    <div id="tabTrend" class="hidden" style="display:flex;flex-direction:column;gap:14px;">
+    <div id="tabTrend" class="hidden" style="display:flex;flex-direction:column;gap:11px;">
       <section class="panel-block">
         <div class="sec-head">
           <h2 class="sec-title">近 7 日 Token 脉络</h2>
-          <span class="sec-meta" id="trendTotalMeta">总计 --</span>
+          <span class="reset-chip" id="trendTotalMeta">总计 --</span>
         </div>
         <div class="chart-box">
           <div class="bars-grid" id="barsGrid"></div>
           <div id="barLabels" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;text-align:center;"></div>
         </div>
-        <div class="vital-strip" style="margin-top:14px;">
+        <div class="vital-strip" style="margin-top:12px;">
           <div class="vital-item">
             <span class="vital-label">7 日总吞吐</span>
             <span class="vital-num" id="t7Total">--</span>
@@ -757,7 +864,7 @@
       <section class="panel-block">
         <div class="sec-head">
           <h2 class="sec-title">模型消耗构成</h2>
-          <span class="sec-meta">近 7 日占比</span>
+          <span class="reset-chip">近 7 日占比</span>
         </div>
         <div class="rank-list" id="modelRankList"></div>
       </section>
@@ -778,10 +885,17 @@
     const capModeBtn = document.getElementById("capModeBtn");
     const refreshBtn = document.getElementById("refreshBtn");
     const liveDot = document.getElementById("liveDot");
+    const segTabs = document.getElementById("segTabs");
 
     let latestData = null;
     let es = null;
     let streamActive = true;
+    let hasPlayedEntrance = false;
+    let hoveredSegKey = null;
+
+    function prefersReducedMotion() {
+      return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
 
     function applySurface(mode) {
       const sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -791,12 +905,13 @@
 
     applySurface(new URLSearchParams(location.search).get("theme"));
 
-    // Tab switching
+    // Animated sliding tab switching
     document.querySelectorAll(".seg-tab").forEach((btn) => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".seg-tab").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        const isLive = btn.dataset.tab === "live";
+        const nextTab = btn.dataset.tab || "live";
+        segTabs.setAttribute("data-tab", nextTab);
+        document.querySelectorAll(".seg-tab").forEach((b) => b.classList.toggle("active", b === btn));
+        const isLive = nextTab === "live";
         document.getElementById("tabLive").classList.toggle("hidden", !isLive);
         document.getElementById("tabTrend").classList.toggle("hidden", isLive);
       });
@@ -823,16 +938,30 @@
       return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     }
 
+    function quotaLevelClass(remaining) {
+      if (!Number.isFinite(remaining)) return "muted";
+      if (remaining > 50) return "good";
+      if (remaining >= 20) return "warn";
+      return "danger";
+    }
+
     function quotaRow(label, bucket) {
       const remaining = bucket?.remainingPct;
       const hasValue = Number.isFinite(remaining);
-      const reset = bucket?.resetInSec ? fmtDurationSec(bucket.resetInSec) : "";
-      const level = remaining <= 15 ? "danger" : remaining <= 35 ? "warn" : "";
+      const reset = bucket?.resetInSec
+        ? fmtDurationSec(bucket.resetInSec)
+        : (hasValue && remaining >= 100 ? "满额就绪" : "");
+      const lvl = quotaLevelClass(remaining);
       const status = hasValue ? `剩余 ${remaining}%` : bucket?.disabled ? "暂不可用" : "宿主未提供";
       return `<div class="bucket-row">
-        <div class="bucket-meta"><span class="bucket-kind">${label}</span>
-          <span class="bucket-stat">${status}${reset ? `<span>${escapeHtml(reset)}</span>` : ""}</span></div>
-        ${hasValue ? `<div class="meter-track"><div class="meter-fill ${level}" style="width:${remaining}%"></div></div>` : ""}
+        <div class="bucket-meta">
+          <span class="bucket-kind">${label}</span>
+          <span class="bucket-right">
+            ${reset ? `<span class="reset-chip">${escapeHtml(reset)}</span>` : ""}
+            <span class="bucket-stat ${lvl}">${status}</span>
+          </span>
+        </div>
+        ${hasValue ? `<div class="meter-track"><div class="meter-fill ${lvl === "good" ? "" : lvl}" style="width:${Math.max(0, Math.min(100, remaining))}%"></div></div>` : ""}
       </div>`;
     }
 
@@ -841,8 +970,13 @@
       const metaEl = document.getElementById("quotaStatusMeta");
       const pools = quota?.pools || [];
 
-      metaEl.textContent = quota?.stale && pools.length ? "上次同步的数据" :
-        pools.length ? quota.account || "官方配额池" : "等待同步";
+      if (quota?.stale && pools.length) {
+        metaEl.textContent = "上次同步 · 条长代表剩余";
+      } else if (pools.length) {
+        metaEl.textContent = (quota.account ? `${quota.account} · ` : "") + "条长代表剩余";
+      } else {
+        metaEl.textContent = "等待同步";
+      }
 
       if (pools.length === 0) {
         const activeLabel = metrics?.activeModelLabel || "Gemini";
@@ -875,6 +1009,55 @@
       }).join("");
     }
 
+    function applySegHoverState(key) {
+      hoveredSegKey = key;
+      const track = document.getElementById("segBarTrack");
+      const legend = document.getElementById("legendList");
+      if (track) {
+        track.classList.toggle("has-hover", !!key);
+        track.querySelectorAll(".seg-piece").forEach((el) => {
+          el.classList.toggle("is-active", el.dataset.key === key);
+        });
+      }
+      if (legend) {
+        legend.querySelectorAll(".legend-row").forEach((el) => {
+          el.classList.toggle("is-active", el.dataset.key === key);
+          el.classList.toggle("is-dimmed", !!key && el.dataset.key !== key);
+        });
+      }
+    }
+
+    function animateFirstEntrance(targetCtx, capStr, targetRem) {
+      if (hasPlayedEntrance || prefersReducedMotion()) return;
+      hasPlayedEntrance = true;
+
+      // Staggered segment bar entrance (60ms per segment)
+      const pieces = document.querySelectorAll("#segBarTrack .seg-piece");
+      pieces.forEach((p, idx) => {
+        p.classList.add("enter");
+        setTimeout(() => p.classList.remove("enter"), 35 + idx * 60);
+      });
+
+      // Smooth 520ms cubic-out number count-up on initial drawer open
+      const mainEl = document.getElementById("ctxMainNum");
+      const remEl = document.getElementById("ctxRemBadge");
+      const start = performance.now();
+      const dur = 520;
+      function tick(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        if (mainEl && Number.isFinite(targetCtx)) {
+          mainEl.innerHTML = `${fmtTok(Math.round(targetCtx * eased))} <small>/ ${capStr}</small>`;
+        }
+        if (remEl && Number.isFinite(targetRem)) {
+          const val = (targetRem * eased).toFixed(targetRem % 1 === 0 ? 0 : 1);
+          remEl.textContent = `剩余 ${val}%`;
+        }
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
     function renderContextAndSteps(data) {
       const m = data.metrics;
       if (!m) return;
@@ -886,11 +1069,12 @@
         : `物理窗口 ${fmtTok(m.physicalCap)}`;
       capModeBtn.title = `当前按${isCompact ? "自动压缩阈值" : "底层模型物理窗口"}计算占比（点击切换；物理窗口 ${fmtTok(m.physicalCap)} / 压缩线 ${fmtTok(m.compactCap)}）`;
 
+      const capStr = fmtTok(m.contextLimit);
       document.getElementById("ctxMainNum").innerHTML =
-        `${fmtTok(m.latestContextTokens)} <small>/ ${fmtTok(m.contextLimit)}</small>`;
+        `${fmtTok(m.latestContextTokens)} <small>/ ${capStr}</small>`;
 
       const remEl = document.getElementById("ctxRemBadge");
-      remEl.textContent = `已用 ${m.contextPct}% · 剩余 ${m.remainingPct}%`;
+      remEl.textContent = `剩余 ${m.remainingPct}%`;
       remEl.className = "ctx-rem-badge" + (m.contextPct >= 82 ? " danger" : (m.contextPct >= 60 ? " warn" : ""));
 
       const track = document.getElementById("segBarTrack");
@@ -899,8 +1083,8 @@
 
       if (bList.length > 0 && m.contextLimit > 0) {
         track.innerHTML = bList.map((b) => {
-          const widthOfCap = Math.max(0.6, (b.tokens / m.contextLimit) * 100);
-          return `<div class="seg-piece" data-key="${b.key}" style="width:${widthOfCap.toFixed(2)}%;background:${SEG_COLORS[b.key] || "var(--accent)"}" title="${escapeHtml(b.label)}: ${fmtTok(b.tokens)}"></div>`;
+          const widthOfCap = Math.max(0.8, (b.tokens / m.contextLimit) * 100);
+          return `<div class="seg-piece" data-key="${b.key}" style="width:${widthOfCap.toFixed(2)}%;background:${SEG_COLORS[b.key] || "var(--accent)"}" title="${escapeHtml(b.label)}: ${fmtTok(b.tokens)} (${b.pct}%)"></div>`;
         }).join("");
 
         legend.innerHTML = bList.map((b) => `
@@ -909,22 +1093,27 @@
               <span class="swatch" style="background:${SEG_COLORS[b.key] || "var(--accent)"}"></span>
               <span>${escapeHtml(b.label)}</span>
             </span>
-            <span class="legend-val">${fmtTok(b.tokens)}<em>${b.pct}%</em></span>
+            <span class="legend-val">
+              <span class="legend-tok">${fmtTok(b.tokens)}</span>
+              <span class="legend-pct">${b.pct}%</span>
+            </span>
           </div>
         `).join("");
 
-        // Interactive hover highlight between legend and segmented bar
-        legend.querySelectorAll(".legend-row").forEach((row) => {
-          const key = row.dataset.key;
-          row.addEventListener("mouseenter", () => {
-            track.classList.add("dimming");
-            track.querySelectorAll(".seg-piece").forEach((p) => p.classList.toggle("active", p.dataset.key === key));
-          });
-          row.addEventListener("mouseleave", () => {
-            track.classList.remove("dimming");
-            track.querySelectorAll(".seg-piece").forEach((p) => p.classList.remove("active"));
-          });
+        // Bidirectional interactive hover highlight between legend rows & bar segments
+        track.querySelectorAll(".seg-piece").forEach((el) => {
+          el.addEventListener("mouseenter", () => applySegHoverState(el.dataset.key));
+          el.addEventListener("mouseleave", () => applySegHoverState(null));
         });
+        legend.querySelectorAll(".legend-row").forEach((row) => {
+          row.addEventListener("mouseenter", () => applySegHoverState(row.dataset.key));
+          row.addEventListener("mouseleave", () => applySegHoverState(null));
+        });
+        if (hoveredSegKey) applySegHoverState(hoveredSegKey);
+
+        if (!hasPlayedEntrance && m.latestContextTokens > 0) {
+          animateFirstEntrance(m.latestContextTokens, capStr, Number(m.remainingPct));
+        }
       } else {
         track.innerHTML = "";
         legend.innerHTML = "";
@@ -935,12 +1124,12 @@
       document.getElementById("vitalCache").textContent = `${Math.round(m.avgCacheHitPct)}% / ${Math.round(m.latestCacheHitPct)}%`;
       document.getElementById("vitalCum").textContent = fmtTok(m.cumulativeTokens);
 
-      document.getElementById("turnsMeta").textContent = `${m.turns} 轮对话 · ${m.steps} 步推理`;
+      document.getElementById("turnsMeta").textContent = `${m.turns} 轮 · ${m.steps} 步`;
 
       const steps = m.recentSteps || [];
       const tbody = document.getElementById("stepsTbody");
       if (steps.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:14px 0;">暂无推理步骤</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-muted);padding:12px 0;">暂无推理步骤</td></tr>`;
       } else {
         tbody.innerHTML = steps.map((s) => `
           <tr>
@@ -995,7 +1184,7 @@
               <span class="rank-tok">${fmtTok(m.total)} · ${m.sharePct}%</span>
             </div>
             <div class="meter-track">
-              <div class="meter-fill" style="width:${Math.max(2, m.sharePct)}%"></div>
+              <div class="meter-fill accent" style="width:${Math.max(2, m.sharePct)}%"></div>
             </div>
           </div>
         `).join("");
@@ -1005,7 +1194,6 @@
       if (!data) return;
       latestData = data;
 
-      // Populate conversation selector preserving selection
       const curVal = convSelect.value;
       const activeTitle = data.activeTitle || (data.activeConversationId ? data.activeConversationId.slice(0, 8) : "当前会话");
       const opts = [`<option value="auto">自动跟随（${escapeHtml(activeTitle.slice(0, 22))}）</option>`];
@@ -1041,7 +1229,10 @@
       };
     }
 
-    convSelect.addEventListener("change", connectStream);
+    convSelect.addEventListener("change", () => {
+      hasPlayedEntrance = false;
+      connectStream();
+    });
 
     capModeBtn.addEventListener("click", async () => {
       const cur = latestData?.settings?.capMode || "compact";
@@ -1058,6 +1249,8 @@
     });
 
     refreshBtn.addEventListener("click", async () => {
+      refreshBtn.classList.remove("spinning");
+      void refreshBtn.offsetWidth;
       refreshBtn.classList.add("spinning");
       try {
         const conv = encodeURIComponent(convSelect.value || "auto");
@@ -1065,17 +1258,17 @@
         const j = await res.json();
         renderAll(j);
       } catch {} finally {
-        setTimeout(() => refreshBtn.classList.remove("spinning"), 350);
+        setTimeout(() => refreshBtn.classList.remove("spinning"), 540);
       }
     });
 
-    // Keyboard events in the embedded panel do not bubble into the host window.
+    // Forward Esc key to parent window so drawer closes reliably
     window.addEventListener("keydown", (event) => {
       if (event.key !== "Escape" || event.defaultPrevented || window.parent === window) return;
       window.parent.postMessage("gemini-pulse:close", "*");
     });
 
-    // Sync theme and pause/resume SSE when the host drawer opens or closes.
+    // Sync theme and pause/resume SSE when the host drawer opens or closes
     window.addEventListener("message", (event) => {
       if (event.source !== window.parent || !event.data || typeof event.data !== "object") return;
       if (event.data.type === "gemini-pulse:surface") {
@@ -1084,8 +1277,12 @@
         const nextActive = Boolean(event.data.active);
         if (nextActive === streamActive && (nextActive ? Boolean(es) : !es)) return;
         streamActive = nextActive;
-        if (streamActive) connectStream();
-        else disconnectStream();
+        if (streamActive) {
+          hasPlayedEntrance = false;
+          connectStream();
+        } else {
+          disconnectStream();
+        }
       }
     });
 

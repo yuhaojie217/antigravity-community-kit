@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)](#快速开始windows)
 [![Zero External Dependencies](https://img.shields.io/badge/Runtime%20Deps-Zero-16a34a.svg)](#目录结构)
-[![Release](https://img.shields.io/badge/Release-v1.0.1-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.0-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
 [![GitHub Downloads](https://img.shields.io/github/downloads/yuhaojie217/antigravity-community-kit/total?label=Downloads&color=16a34a)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
 
 ---
@@ -28,8 +28,11 @@
 
 ![桌边动态搭子全动作预览](docs/assets/muse-poses.png)
 
-### 3. `gemini-pulse`：512K 上下文窗口、官方配额池与 7 日趋势看板
-输入框权限按钮左侧嵌入 Codex 同款升级版可点击 SVG 圆环与悬停速览卡，单击滑出右侧完整看板（收起自动断开 SSE，空闲零冗余连接），被动跟随主窗口亮/暗色与三套皮肤色调；已按官方翻倍扩容后的 **512K 自动压缩线**（旧版 262K → 新版 512K）默认校准，同时支持一键切换至 **1M 模型物理上限**。
+### 3. `gemini-pulse`：512K 上下文窗口、官方配额池与 7 日趋势看板（v1.1.0 全新降噪视觉 & 圆环悬浮窗）
+输入框权限按钮左侧嵌入 Codex 同款升级版可点击 SVG 圆环；悬停弹出全新**圆环仪表速览卡**（上下文大圆环 + 5h/每周绿/琥珀/红阈值双迷你圆环 + 轻巧 `×` 关闭）；单击滑出**精修降噪侧栏看板**（主题色深浅梯度 5 段条、图例↔分段双向悬停联动、滑动 Tab 与数字入场微动效，收起自动断开 SSE）；按官方翻倍扩容后的 **512K（精确 524,288）自动压缩线** 默认校准，支持一键切至 **1M 模型物理上限**。
+
+### 4. 聊天文件链接 & Artifact 卡片右键增强（v1.1.0 新增）
+解决官方交付文件/链接右键只有 `Copy` 的痛点：右键点击聊天区任意 `file:///` 链接、Artifact 交付卡片或本地路径文本，直接弹出与三套皮肤融为一体的增强菜单，支持 **在文件夹中显示（高亮定位）**、**用默认程序打开**、**选择打开方式…（调用 Windows 原生弹窗）** 与 **复制完整路径**，非文件区域 100% 放行原生右键不误伤。
 
 ![Gemini Pulse 看板展示](docs/assets/gemini-pulse-showcase.png)
 
