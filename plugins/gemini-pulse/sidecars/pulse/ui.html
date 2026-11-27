@@ -92,6 +92,39 @@
       --seg-track: #222933;
     }
 
+    html[data-surface="nebula"] {
+      --bg: #faf8ff; --surface: #ffffff; --surface-subtle: #f3eeff;
+      --ink: #231e33; --ink-secondary: #5c5376; --ink-muted: #7c7198;
+      --line: #e2daf6; --line-subtle: #eee8fb;
+      --accent: #8839ef; --accent-soft: rgba(136,57,239,0.10); --accent-ring: rgba(136,57,239,0.28);
+      --good: #16a34a; --warn: #d97706; --danger: #dc2626; --quota-good: #16a34a;
+      --seg-tools: #8839ef; --seg-messages: #ea76cb; --seg-system: #7c7198; --seg-rules: #a99fc2; --seg-thinking: #df8e1d; --seg-track: #eee8fb;
+    }
+    html[data-surface="everforest"] {
+      --bg: #f6f9f4; --surface: #fcfefb; --surface-subtle: #edf3e9;
+      --ink: #223026; --ink-secondary: #4f6455; --ink-muted: #6c8272;
+      --line: #d6e2d5; --line-subtle: #e6efe5;
+      --accent: #3a7d54; --accent-soft: rgba(58,125,84,0.10); --accent-ring: rgba(58,125,84,0.26);
+      --good: #2f855a; --warn: #c07a1a; --danger: #c53030; --quota-good: #2f855a;
+      --seg-tools: #3a7d54; --seg-messages: #6ea87d; --seg-system: #5c6e61; --seg-rules: #93a698; --seg-thinking: #b5924c; --seg-track: #e6efe5;
+    }
+    html[data-surface="kanagawa"] {
+      --bg: #f6f2e4; --surface: #fbf8ee; --surface-subtle: #ede7d3;
+      --ink: #272520; --ink-secondary: #585447; --ink-muted: #767060;
+      --line: #d6ceb6; --line-subtle: #e7e0cc;
+      --accent: #264c7d; --accent-soft: rgba(38,76,125,0.10); --accent-ring: rgba(38,76,125,0.28);
+      --good: #2f7d57; --warn: #c97a2b; --danger: #c44634; --quota-good: #2f7d57;
+      --seg-tools: #264c7d; --seg-messages: #5d7fb0; --seg-system: #706a5c; --seg-rules: #a39c8c; --seg-thinking: #cc5a3b; --seg-track: #e7e0cc;
+    }
+    html[data-surface="bauhaus"] {
+      --bg: #f4f1ea; --surface: #fbf9f4; --surface-subtle: #ebe6db;
+      --ink: #111111; --ink-secondary: #3d3b38; --ink-muted: #635f59;
+      --line: #c9c2b4; --line-subtle: #ded8cb;
+      --accent: #d13429; --accent-soft: rgba(209,52,41,0.11); --accent-ring: rgba(209,52,41,0.28);
+      --good: #15803d; --warn: #ca8a04; --danger: #d13429; --quota-good: #15803d;
+      --seg-tools: #d13429; --seg-messages: #1d4ed8; --seg-system: #52504c; --seg-rules: #9c978d; --seg-thinking: #eab308; --seg-track: #e4dfd2;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     ::selection {
@@ -880,7 +913,7 @@
       thinking: "var(--seg-thinking)"
     };
 
-    const SURFACES = ["google", "claude", "dark"];
+    const SURFACES = ["google", "claude", "nebula", "everforest", "kanagawa", "bauhaus", "dark"];
     const convSelect = document.getElementById("convSelect");
     const capModeBtn = document.getElementById("capModeBtn");
     const refreshBtn = document.getElementById("refreshBtn");

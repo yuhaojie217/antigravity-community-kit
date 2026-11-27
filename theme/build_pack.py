@@ -57,18 +57,18 @@ def main():
     if "__HAKIMI_POSES__" not in tpl or "__AGY_THEMES__" not in tpl:
         raise SystemExit("Missing template markers in renderer.template.js")
 
+    unified_css_path = os.path.join(BASE, "themes_all.css")
     google_css_path = os.path.join(BASE, "google.css")
+    src_css_path = unified_css_path if os.path.exists(unified_css_path) else google_css_path
     theme_css_path = os.path.join(DIST, "theme.css")
-    with open(google_css_path, "r", encoding="utf-8") as gf:
-        google_css = gf.read()
+    with open(src_css_path, "r", encoding="utf-8") as gf:
+        theme_css = gf.read()
     with open(theme_css_path, "w", encoding="utf-8") as tf:
-        tf.write(google_css)
-    print(f"[sync] dist/theme.css <- google.css ({len(google_css)} chars)")
+        tf.write(theme_css)
+    print(f"[sync] dist/theme.css <- {os.path.basename(src_css_path)} ({len(theme_css)} chars)")
 
-    claude_path = os.path.join(BASE, "claude.css")
-    with open(claude_path, "r", encoding="utf-8") as tf:
-        themes = {"claude": tf.read()}
-    print(f"[theme] claude: {len(themes['claude'])} chars")
+    # All 6+1 themes are pre-mounted inside dist/theme.css for <2ms zero-jank switching
+    themes = {}
 
     out = tpl.replace("__HAKIMI_POSES__", json.dumps(found, ensure_ascii=False))
     out = out.replace("__AGY_THEMES__", json.dumps(themes, ensure_ascii=False))

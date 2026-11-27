@@ -9,6 +9,7 @@ import { buildFullTelemetryPayload, saveSettings } from "./telemetry.mjs";
 const SELF_DIR = dirname(fileURLToPath(import.meta.url));
 const UI_HTML_PATH = join(SELF_DIR, "ui.html");
 const BRAIN_DIR = join(homedir(), ".gemini", "antigravity", "brain");
+const OUTFITS_DIR = join(homedir(), ".gemini", "antigravity", "custom_theme", "app", "outfits");
 const PORT = Number(process.env.ANTIGRAVITY_SIDECAR_WEB_PORT || 0);
 const LOCAL_PORT_FILE = join(SELF_DIR, "port.txt");
 
@@ -175,6 +176,28 @@ async function handleRequest(req, res) {
   if (url.pathname === "/healthz") {
     res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
     res.end("ok");
+    return;
+  }
+
+  // Lazy-load external character outfit frames (WebP/PNG) from custom_theme/app/outfits/<skin>/<pose>.webp
+  const outfitMatch = url.pathname.match(/^\/outfits\/([a-z0-9_-]{2,24})\/([a-z0-9_-]{2,32}\.(?:webp|png))$/i);
+  if (outfitMatch && req.method === "GET") {
+    const [, skinDir, fileName] = outfitMatch;
+    const fp = join(OUTFITS_DIR, skinDir, fileName);
+    if (!existsSync(fp)) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+      res.end("not found");
+      return;
+    }
+    try {
+      const buf = readFileSync(fp);
+      const mime = fileName.toLowerCase().endsWith(".webp") ? "image/webp" : "image/png";
+      res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=3600" });
+      res.end(buf);
+    } catch {
+      res.writeHead(500);
+      res.end();
+    }
     return;
   }
 

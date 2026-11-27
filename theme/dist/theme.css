@@ -1,20 +1,25 @@
 /* ============================================================
-   Antigravity · 哈基米 Google 晨曦皮肤（严格作用域隔离版）
+   Antigravity · Community Multi-Art-Style Theme Engine (v1.2.0)
    ------------------------------------------------------------
-   所有 Google 视觉样式均限定在 html[data-agy-theme="google"]
-   （及启动未初始化前的 html:not([data-agy-theme]) 防闪白）之下，
-   切换到 Claude 或 Default(off) 时 100% 退场，绝不跨主题串味。
+   Zero-jank single-skeleton CSS token architecture:
+     - 6 curated art-style skins (Light & Dark):
+       google | claude | nebula | everforest | kanagawa | bauhaus
+     - + off (Default Graphite Minimal reset)
+   Switching themes only updates ONE attribute: html[data-agy-theme],
+   zero <style> DOM rewrites, < 2ms instant switch while dragging dial.
 
-   保留历史避坑约定：
-     - 弹窗/浮层实底与高 z-index（防双重曝光与被遮挡）
-     - 侧边栏不做 GPU 合成层隔离（防下拉菜单被裁切）
-     - Tab 关闭按钮始终可点
+   Preserved historical safeguards:
+     - Send button strictly scoped inside .surface-composer (never hits Settings)
+     - Opaque dialog/menu/popover surfaces in both light & dark modes
+     - No GPU compositing isolation on sidebar (prevents dropdown clipping)
+     - Tab close buttons always clickable
    ============================================================ */
 
-/* 1. Google Tokens ------------------------------------------ */
+/* ==================== 1. THEME TOKENS ==================== */
+
+/* 1.1 Google Dawn (Default fallback before init) */
 :root:not([data-agy-theme]),
 html[data-agy-theme="google"] {
-  /* 主画布与侧边栏拉开清晰舒适的冷雾蓝灰色阶 */
   --gs-bg: #fbfdff;
   --gs-bg-2: #f3f7fd;
   --gs-side: #eef3fa;
@@ -24,65 +29,29 @@ html[data-agy-theme="google"] {
   --gs-side-sep: rgba(26, 56, 102, 0.09);
   --gs-row-selected: #dfebfc;
   --gs-row-selected-border: rgba(26, 115, 232, 0.30);
-
   --gs-ink: #1b1f24;
   --gs-ink-2: #525d6d;
   --gs-ink-3: #64748b;
-
   --gs-line: #dde5f0;
   --gs-line-soft: #e8eef6;
-
-  /* Google 官方四色 */
-  --gs-blue: #4285F4;
-  --gs-red: #EA4335;
-  --gs-yellow: #FBBC04;
-  --gs-green: #34A853;
-
-  /* 主色 */
   --gs-accent: #1a73e8;
   --gs-accent-hover: #155fc2;
   --gs-accent-strong: #124eb3;
   --gs-accent-soft: rgba(26, 115, 232, 0.10);
   --gs-accent-ring: rgba(26, 115, 232, 0.26);
-
-  /* 四色细渐变：静止柔和、聚焦/悬停点亮 */
-  --gs-quad-soft: linear-gradient(
-    115deg,
-    rgba(66, 133, 244, 0.58) 0%,
-    rgba(234, 67, 53, 0.48) 33%,
-    rgba(245, 178, 12, 0.54) 66%,
-    rgba(52, 168, 83, 0.50) 100%
-  );
-  --gs-quad: linear-gradient(
-    115deg,
-    rgba(66, 133, 244, 0.94) 0%,
-    rgba(234, 67, 53, 0.86) 33%,
-    rgba(245, 178, 12, 0.90) 66%,
-    rgba(52, 168, 83, 0.88) 100%
-  );
-
-  /* 宿主 token 覆盖 */
-  --background: var(--gs-bg) !important;
-  --bg-canvas: var(--gs-bg) !important;
-  --color-background: var(--gs-bg) !important;
-  --sidebar: var(--gs-side) !important;
-  --color-sidebar: var(--gs-side) !important;
-  --sidebar-secondary: var(--gs-row-selected) !important;
-  --card: #ffffff !important;
-  --color-card: #ffffff !important;
-  --popover: #ffffff !important;
-  --color-popover: #ffffff !important;
-  --popover-foreground: var(--gs-ink) !important;
-  --border: var(--gs-line) !important;
-  --color-border: var(--gs-line) !important;
-  --foreground: var(--gs-ink) !important;
-  --muted-foreground: var(--gs-ink-2) !important;
-  --primary: var(--gs-accent) !important;
+  --gs-edge-soft: linear-gradient(115deg, rgba(66,133,244,0.58) 0%, rgba(234,67,53,0.48) 33%, rgba(245,178,12,0.54) 66%, rgba(52,168,83,0.50) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(66,133,244,0.94) 0%, rgba(234,67,53,0.86) 33%, rgba(245,178,12,0.90) 66%, rgba(52,168,83,0.88) 100%);
+  --gs-ambient:
+    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.032) 0%, transparent 44%),
+    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.022) 0%, transparent 42%),
+    radial-gradient(circle at 6% 92%, rgba(52, 168, 83, 0.018) 0%, transparent 42%),
+    radial-gradient(circle at 92% 94%, rgba(234, 67, 53, 0.020) 0%, transparent 44%);
+  --gs-radius: 17px;
+  --gs-edge-w: 1.5px;
+  --gs-pop-bg: #ffffff;
 }
-
-/* Google 深色模式（被动跟随官方暗色类） */
-html:not([data-agy-theme]):has(body.theme-dark),
-html[data-agy-theme="google"]:has(body.theme-dark),
+html:not([data-agy-theme])[data-agy-dark="1"],
+html[data-agy-theme="google"][data-agy-dark="1"],
 html:not([data-agy-theme]).dark,
 html[data-agy-theme="google"].dark,
 html:not([data-agy-theme])[data-theme="dark"],
@@ -98,44 +67,383 @@ html[data-agy-theme="google"] body.theme-dark {
   --gs-side-sep: rgba(148, 163, 184, 0.12);
   --gs-row-selected: #17263d;
   --gs-row-selected-border: rgba(138, 180, 248, 0.34);
-
   --gs-ink: #e8edf4;
   --gs-ink-2: #9aa4b2;
   --gs-ink-3: #8391a5;
   --gs-line: #27313f;
   --gs-line-soft: #1d2530;
-
   --gs-accent: #8ab4f8;
   --gs-accent-hover: #aecbfa;
   --gs-accent-strong: #c2dafc;
   --gs-accent-soft: rgba(138, 180, 248, 0.14);
   --gs-accent-ring: rgba(138, 180, 248, 0.32);
+  --gs-edge-soft: linear-gradient(115deg, rgba(138,180,248,0.42) 0%, rgba(242,139,130,0.34) 33%, rgba(253,214,99,0.34) 66%, rgba(129,201,149,0.36) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(138,180,248,0.85) 0%, rgba(242,139,130,0.76) 33%, rgba(253,214,99,0.76) 66%, rgba(129,201,149,0.78) 100%);
+  --gs-ambient:
+    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.07) 0%, transparent 46%),
+    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.035) 0%, transparent 44%);
+  --gs-pop-bg: #161d26;
+}
 
-  --gs-quad-soft: linear-gradient(
-    115deg,
-    rgba(138, 180, 248, 0.42) 0%,
-    rgba(242, 139, 130, 0.34) 33%,
-    rgba(253, 214, 99, 0.34) 66%,
-    rgba(129, 201, 149, 0.36) 100%
-  );
-  --gs-quad: linear-gradient(
-    115deg,
-    rgba(138, 180, 248, 0.85) 0%,
-    rgba(242, 139, 130, 0.76) 33%,
-    rgba(253, 214, 99, 0.76) 66%,
-    rgba(129, 201, 149, 0.78) 100%
-  );
+/* 1.2 Claude Warm Paper */
+html[data-agy-theme="claude"] {
+  --gs-bg: #faf9f5;
+  --gs-bg-2: #f3efe6;
+  --gs-side: #eee9de;
+  --gs-side-elev: #fffdf9;
+  --gs-side-hover: rgba(201, 100, 66, 0.08);
+  --gs-side-border: #dcd3c4;
+  --gs-side-sep: rgba(96, 74, 52, 0.11);
+  --gs-row-selected: #f4e4dc;
+  --gs-row-selected-border: rgba(201, 100, 66, 0.32);
+  --gs-ink: #2b2723;
+  --gs-ink-2: #5d564e;
+  --gs-ink-3: #786e62;
+  --gs-line: #e2dacd;
+  --gs-line-soft: #eee8dc;
+  --gs-accent: #c96442;
+  --gs-accent-hover: #b4532f;
+  --gs-accent-strong: #9a3f21;
+  --gs-accent-soft: rgba(201, 100, 66, 0.10);
+  --gs-accent-ring: rgba(201, 100, 66, 0.25);
+  --gs-edge-soft: linear-gradient(115deg, rgba(201,100,66,0.48) 0%, rgba(217,138,92,0.42) 52%, rgba(176,126,86,0.44) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(201,100,66,0.92) 0%, rgba(222,125,76,0.86) 52%, rgba(186,108,66,0.88) 100%);
+  --gs-ambient: none;
+  --gs-radius: 17px;
+  --gs-edge-w: 1.5px;
+  --gs-pop-bg: #ffffff;
+}
+html[data-agy-theme="claude"][data-agy-dark="1"],
+html[data-agy-theme="claude"].dark,
+html[data-agy-theme="claude"][data-theme="dark"],
+html[data-agy-theme="claude"] body.theme-dark {
+  --gs-bg: #1d1b18;
+  --gs-bg-2: #25221e;
+  --gs-side: #151310;
+  --gs-side-elev: #25221e;
+  --gs-side-hover: rgba(224, 130, 97, 0.10);
+  --gs-side-border: #2c2823;
+  --gs-side-sep: rgba(236, 226, 210, 0.10);
+  --gs-row-selected: #33241d;
+  --gs-row-selected-border: rgba(224, 130, 97, 0.38);
+  --gs-ink: #ece7df;
+  --gs-ink-2: #aea69b;
+  --gs-ink-3: #8d857a;
+  --gs-line: #322e28;
+  --gs-line-soft: #26221d;
+  --gs-accent: #e08261;
+  --gs-accent-hover: #eb9678;
+  --gs-accent-strong: #f3ae95;
+  --gs-accent-soft: rgba(224, 130, 97, 0.14);
+  --gs-accent-ring: rgba(224, 130, 97, 0.32);
+  --gs-edge-soft: linear-gradient(115deg, rgba(224,130,97,0.42) 0%, rgba(205,148,102,0.34) 52%, rgba(176,128,92,0.36) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(235,144,110,0.88) 0%, rgba(224,156,106,0.80) 52%, rgba(204,122,86,0.84) 100%);
+  --gs-ambient: none;
+  --gs-pop-bg: #25221e;
+}
 
+/* 1.3 Nebula (Naimi Signature · Catppuccin Latte / Mocha) */
+html[data-agy-theme="nebula"] {
+  --gs-bg: #faf8ff;
+  --gs-bg-2: #f3eeff;
+  --gs-side: #eee8fb;
+  --gs-side-elev: #ffffff;
+  --gs-side-hover: rgba(136, 57, 239, 0.08);
+  --gs-side-border: #ddd3f5;
+  --gs-side-sep: rgba(114, 76, 186, 0.11);
+  --gs-row-selected: #e8ddff;
+  --gs-row-selected-border: rgba(136, 57, 239, 0.34);
+  --gs-ink: #231e33;
+  --gs-ink-2: #5c5376;
+  --gs-ink-3: #7c7198;
+  --gs-line: #e2daf6;
+  --gs-line-soft: #eee8fb;
+  --gs-accent: #8839ef;
+  --gs-accent-hover: #7126d8;
+  --gs-accent-strong: #5f1cb8;
+  --gs-accent-soft: rgba(136, 57, 239, 0.10);
+  --gs-accent-ring: rgba(136, 57, 239, 0.28);
+  --gs-edge-soft: linear-gradient(115deg, rgba(136,57,239,0.52) 0%, rgba(234,118,203,0.48) 54%, rgba(223,142,29,0.46) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(136,57,239,0.92) 0%, rgba(234,118,203,0.88) 54%, rgba(223,142,29,0.84) 100%);
+  --gs-ambient:
+    radial-gradient(circle at 88% 10%, rgba(136, 57, 239, 0.055) 0%, transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(234, 118, 203, 0.045) 0%, transparent 42%);
+  --gs-radius: 18px;
+  --gs-edge-w: 1.6px;
+  --gs-pop-bg: #ffffff;
+}
+html[data-agy-theme="nebula"][data-agy-dark="1"],
+html[data-agy-theme="nebula"].dark,
+html[data-agy-theme="nebula"][data-theme="dark"],
+html[data-agy-theme="nebula"] body.theme-dark {
+  --gs-bg: #1e1e2e;
+  --gs-bg-2: #26263a;
+  --gs-side: #181825;
+  --gs-side-elev: #242437;
+  --gs-side-hover: rgba(203, 166, 247, 0.11);
+  --gs-side-border: #313244;
+  --gs-side-sep: rgba(203, 166, 247, 0.12);
+  --gs-row-selected: #2e2645;
+  --gs-row-selected-border: rgba(203, 166, 247, 0.40);
+  --gs-ink: #cdd6f4;
+  --gs-ink-2: #a6adc8;
+  --gs-ink-3: #7f849c;
+  --gs-line: #34364a;
+  --gs-line-soft: #27283a;
+  --gs-accent: #cba6f7;
+  --gs-accent-hover: #ddc1ff;
+  --gs-accent-strong: #ebd8ff;
+  --gs-accent-soft: rgba(203, 166, 247, 0.15);
+  --gs-accent-ring: rgba(203, 166, 247, 0.34);
+  --gs-edge-soft: linear-gradient(115deg, rgba(203,166,247,0.46) 0%, rgba(245,194,231,0.40) 54%, rgba(249,226,175,0.36) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(203,166,247,0.90) 0%, rgba(245,194,231,0.84) 54%, rgba(249,226,175,0.80) 100%);
+  --gs-ambient: radial-gradient(circle at 86% 12%, rgba(203, 166, 247, 0.08) 0%, transparent 46%);
+  --gs-pop-bg: #242437;
+}
+
+/* 1.4 Everforest Matcha (Biophilic Forest Green) */
+html[data-agy-theme="everforest"] {
+  --gs-bg: #f6f9f4;
+  --gs-bg-2: #edf3e9;
+  --gs-side: #e7efe3;
+  --gs-side-elev: #fcfefb;
+  --gs-side-hover: rgba(58, 125, 84, 0.08);
+  --gs-side-border: #d1dfd0;
+  --gs-side-sep: rgba(45, 84, 58, 0.11);
+  --gs-row-selected: #d9ebd8;
+  --gs-row-selected-border: rgba(58, 125, 84, 0.34);
+  --gs-ink: #223026;
+  --gs-ink-2: #4f6455;
+  --gs-ink-3: #6c8272;
+  --gs-line: #d6e2d5;
+  --gs-line-soft: #e6efe5;
+  --gs-accent: #3a7d54;
+  --gs-accent-hover: #2d6844;
+  --gs-accent-strong: #225435;
+  --gs-accent-soft: rgba(58, 125, 84, 0.10);
+  --gs-accent-ring: rgba(58, 125, 84, 0.26);
+  --gs-edge-soft: linear-gradient(115deg, rgba(58,125,84,0.52) 0%, rgba(110,168,125,0.46) 55%, rgba(181,146,76,0.44) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(58,125,84,0.92) 0%, rgba(110,168,125,0.86) 55%, rgba(181,146,76,0.84) 100%);
+  --gs-ambient: radial-gradient(circle at 86% 10%, rgba(110, 168, 125, 0.055) 0%, transparent 46%);
+  --gs-radius: 17px;
+  --gs-edge-w: 1.5px;
+  --gs-pop-bg: #fcfefb;
+}
+html[data-agy-theme="everforest"][data-agy-dark="1"],
+html[data-agy-theme="everforest"].dark,
+html[data-agy-theme="everforest"][data-theme="dark"],
+html[data-agy-theme="everforest"] body.theme-dark {
+  --gs-bg: #232a27;
+  --gs-bg-2: #2b3430;
+  --gs-side: #1c221f;
+  --gs-side-elev: #2a332e;
+  --gs-side-hover: rgba(167, 192, 128, 0.10);
+  --gs-side-border: #38443d;
+  --gs-side-sep: rgba(167, 192, 128, 0.12);
+  --gs-row-selected: #303d34;
+  --gs-row-selected-border: rgba(167, 192, 128, 0.38);
+  --gs-ink: #d3c6aa;
+  --gs-ink-2: #9da9a0;
+  --gs-ink-3: #859289;
+  --gs-line: #3a453f;
+  --gs-line-soft: #2e3833;
+  --gs-accent: #a7c080;
+  --gs-accent-hover: #bdd498;
+  --gs-accent-strong: #d5e7b5;
+  --gs-accent-soft: rgba(167, 192, 128, 0.15);
+  --gs-accent-ring: rgba(167, 192, 128, 0.32);
+  --gs-edge-soft: linear-gradient(115deg, rgba(167,192,128,0.44) 0%, rgba(131,192,146,0.38) 55%, rgba(219,188,127,0.36) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(167,192,128,0.88) 0%, rgba(131,192,146,0.82) 55%, rgba(219,188,127,0.80) 100%);
+  --gs-ambient: radial-gradient(circle at 86% 12%, rgba(167, 192, 128, 0.06) 0%, transparent 46%);
+  --gs-pop-bg: #2a332e;
+}
+
+/* 1.5 Kanagawa Ukiyo-e (Lotus / Wave) */
+html[data-agy-theme="kanagawa"] {
+  --gs-bg: #f6f2e4;
+  --gs-bg-2: #ede7d3;
+  --gs-side: #e7e0cb;
+  --gs-side-elev: #fbf8ee;
+  --gs-side-hover: rgba(38, 76, 125, 0.08);
+  --gs-side-border: #d2c8ae;
+  --gs-side-sep: rgba(31, 58, 95, 0.12);
+  --gs-row-selected: #dce3ea;
+  --gs-row-selected-border: rgba(38, 76, 125, 0.34);
+  --gs-ink: #272520;
+  --gs-ink-2: #585447;
+  --gs-ink-3: #767060;
+  --gs-line: #d6ceb6;
+  --gs-line-soft: #e7e0cc;
+  --gs-accent: #264c7d;
+  --gs-accent-hover: #1c3c66;
+  --gs-accent-strong: #132c4d;
+  --gs-accent-soft: rgba(38, 76, 125, 0.10);
+  --gs-accent-ring: rgba(38, 76, 125, 0.28);
+  --gs-edge-soft: linear-gradient(115deg, rgba(31,58,95,0.56) 0%, rgba(77,105,155,0.48) 50%, rgba(204,90,59,0.52) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(31,58,95,0.94) 0%, rgba(77,105,155,0.88) 50%, rgba(204,90,59,0.90) 100%);
+  --gs-ambient:
+    radial-gradient(circle at 90% 10%, rgba(38, 76, 125, 0.05) 0%, transparent 46%),
+    radial-gradient(circle at 10% 90%, rgba(204, 90, 59, 0.04) 0%, transparent 44%);
+  --gs-radius: 14px;
+  --gs-edge-w: 1.6px;
+  --gs-pop-bg: #fbf8ee;
+}
+html[data-agy-theme="kanagawa"][data-agy-dark="1"],
+html[data-agy-theme="kanagawa"].dark,
+html[data-agy-theme="kanagawa"][data-theme="dark"],
+html[data-agy-theme="kanagawa"] body.theme-dark {
+  --gs-bg: #1f1f28;
+  --gs-bg-2: #2a2a37;
+  --gs-side: #16161d;
+  --gs-side-elev: #252531;
+  --gs-side-hover: rgba(126, 156, 216, 0.11);
+  --gs-side-border: #363646;
+  --gs-side-sep: rgba(220, 215, 186, 0.11);
+  --gs-row-selected: #2d3448;
+  --gs-row-selected-border: rgba(126, 156, 216, 0.38);
+  --gs-ink: #dcd7ba;
+  --gs-ink-2: #a6a69c;
+  --gs-ink-3: #7c7b72;
+  --gs-line: #363646;
+  --gs-line-soft: #2a2a37;
+  --gs-accent: #7e9cd8;
+  --gs-accent-hover: #9ab5e8;
+  --gs-accent-strong: #b8cdf3;
+  --gs-accent-soft: rgba(126, 156, 216, 0.15);
+  --gs-accent-ring: rgba(126, 156, 216, 0.32);
+  --gs-edge-soft: linear-gradient(115deg, rgba(126,156,216,0.46) 0%, rgba(149,127,184,0.40) 50%, rgba(228,104,118,0.42) 100%);
+  --gs-edge-focus: linear-gradient(115deg, rgba(126,156,216,0.90) 0%, rgba(149,127,184,0.84) 50%, rgba(228,104,118,0.86) 100%);
+  --gs-ambient: radial-gradient(circle at 88% 12%, rgba(126, 156, 216, 0.08) 0%, transparent 46%);
+  --gs-pop-bg: #252531;
+}
+
+/* 1.6 Bauhaus Print (Modernist Primary Geometric) */
+html[data-agy-theme="bauhaus"] {
+  --gs-bg: #f4f1ea;
+  --gs-bg-2: #ebe6db;
+  --gs-side: #e7e1d4;
+  --gs-side-elev: #fbf9f4;
+  --gs-side-hover: rgba(209, 52, 41, 0.08);
+  --gs-side-border: #2a2926;
+  --gs-side-sep: rgba(17, 17, 17, 0.16);
+  --gs-row-selected: #f7e6a8;
+  --gs-row-selected-border: #1d1d1b;
+  --gs-ink: #111111;
+  --gs-ink-2: #3d3b38;
+  --gs-ink-3: #635f59;
+  --gs-line: #c9c2b4;
+  --gs-line-soft: #ded8cb;
+  --gs-accent: #d13429;
+  --gs-accent-hover: #b3261c;
+  --gs-accent-strong: #921b13;
+  --gs-accent-soft: rgba(209, 52, 41, 0.11);
+  --gs-accent-ring: rgba(209, 52, 41, 0.28);
+  --gs-edge-soft: linear-gradient(90deg, rgba(209,52,41,0.72) 0%, rgba(209,52,41,0.72) 33%, rgba(234,179,8,0.78) 33%, rgba(234,179,8,0.78) 66%, rgba(29,78,216,0.72) 66%, rgba(29,78,216,0.72) 100%);
+  --gs-edge-focus: linear-gradient(90deg, #d13429 0%, #d13429 33%, #eab308 33%, #eab308 66%, #1d4ed8 66%, #1d4ed8 100%);
+  --gs-ambient: none;
+  --gs-radius: 9px;
+  --gs-edge-w: 2px;
+  --gs-pop-bg: #fbf9f4;
+}
+html[data-agy-theme="bauhaus"][data-agy-dark="1"],
+html[data-agy-theme="bauhaus"].dark,
+html[data-agy-theme="bauhaus"][data-theme="dark"],
+html[data-agy-theme="bauhaus"] body.theme-dark {
+  --gs-bg: #141413;
+  --gs-bg-2: #1d1d1b;
+  --gs-side: #0e0e0d;
+  --gs-side-elev: #1b1b19;
+  --gs-side-hover: rgba(242, 197, 61, 0.10);
+  --gs-side-border: #3d3b36;
+  --gs-side-sep: rgba(244, 241, 234, 0.13);
+  --gs-row-selected: #2e2816;
+  --gs-row-selected-border: #f2c53d;
+  --gs-ink: #f4f1ea;
+  --gs-ink-2: #b9b4a8;
+  --gs-ink-3: #8c877c;
+  --gs-line: #33312d;
+  --gs-line-soft: #252420;
+  --gs-accent: #ef4444;
+  --gs-accent-hover: #f87171;
+  --gs-accent-strong: #f2c53d;
+  --gs-accent-soft: rgba(239, 68, 68, 0.16);
+  --gs-accent-ring: rgba(242, 197, 61, 0.34);
+  --gs-edge-soft: linear-gradient(90deg, rgba(239,68,68,0.68) 0%, rgba(239,68,68,0.68) 33%, rgba(242,197,61,0.72) 33%, rgba(242,197,61,0.72) 66%, rgba(59,130,246,0.68) 66%, rgba(59,130,246,0.68) 100%);
+  --gs-edge-focus: linear-gradient(90deg, #ef4444 0%, #ef4444 33%, #f2c53d 33%, #f2c53d 66%, #3b82f6 66%, #3b82f6 100%);
+  --gs-ambient: none;
+  --gs-pop-bg: #1b1b19;
+}
+
+/* 1.7 Off (Default Minimal Graphite Reset) */
+html[data-agy-theme="off"] {
+  --gs-bg: #ffffff;
+  --gs-bg-2: #f4f4f5;
+  --gs-side: #f4f4f5;
+  --gs-side-elev: #ffffff;
+  --gs-side-hover: rgba(24, 24, 27, 0.06);
+  --gs-side-border: #e4e4e7;
+  --gs-side-sep: #e4e4e7;
+  --gs-row-selected: #ffffff;
+  --gs-row-selected-border: #d4d4d8;
+  --gs-ink: #18181b;
+  --gs-ink-2: #52525b;
+  --gs-ink-3: #71717a;
+  --gs-line: #e4e4e7;
+  --gs-line-soft: #f0f0f2;
+  --gs-accent: #18181b;
+  --gs-accent-hover: #27272a;
+  --gs-accent-strong: #18181b;
+  --gs-accent-soft: rgba(24, 24, 27, 0.08);
+  --gs-accent-ring: rgba(24, 24, 27, 0.22);
+  --gs-edge-soft: linear-gradient(115deg, #d4d4d8, #d4d4d8);
+  --gs-edge-focus: linear-gradient(115deg, #52525b, #52525b);
+  --gs-ambient: none;
+  --gs-radius: 17px;
+  --gs-edge-w: 1.5px;
+  --gs-pop-bg: #ffffff;
+}
+html[data-agy-theme="off"][data-agy-dark="1"],
+html[data-agy-theme="off"].dark,
+html[data-agy-theme="off"][data-theme="dark"],
+html[data-agy-theme="off"] body.theme-dark {
+  --gs-bg: #111317;
+  --gs-bg-2: #181b21;
+  --gs-side: #0e1014;
+  --gs-side-elev: #181b21;
+  --gs-side-hover: rgba(255, 255, 255, 0.07);
+  --gs-side-border: #27272a;
+  --gs-side-sep: #27272a;
+  --gs-row-selected: #20232a;
+  --gs-row-selected-border: #3f3f46;
+  --gs-ink: #f4f4f5;
+  --gs-ink-2: #a1a1aa;
+  --gs-ink-3: #71717a;
+  --gs-line: #27272a;
+  --gs-line-soft: #1f1f23;
+  --gs-accent: #e4e4e7;
+  --gs-accent-hover: #ffffff;
+  --gs-accent-strong: #ffffff;
+  --gs-accent-soft: rgba(255, 255, 255, 0.10);
+  --gs-accent-ring: rgba(255, 255, 255, 0.24);
+  --gs-edge-soft: linear-gradient(115deg, #3f3f46, #3f3f46);
+  --gs-edge-focus: linear-gradient(115deg, #a1a1aa, #a1a1aa);
+  --gs-ambient: none;
+  --gs-pop-bg: #181b21;
+}
+
+/* ==================== 2. HOST TOKEN BINDING (NON-OFF SKINS) ==================== */
+html:not([data-agy-theme="off"]),
+html:not([data-agy-theme="off"]) body.theme-dark {
   --background: var(--gs-bg) !important;
   --bg-canvas: var(--gs-bg) !important;
   --color-background: var(--gs-bg) !important;
   --sidebar: var(--gs-side) !important;
   --color-sidebar: var(--gs-side) !important;
   --sidebar-secondary: var(--gs-row-selected) !important;
-  --card: #161d26 !important;
-  --color-card: #161d26 !important;
-  --popover: #161d26 !important;
-  --color-popover: #161d26 !important;
+  --card: var(--gs-side-elev) !important;
+  --color-card: var(--gs-side-elev) !important;
+  --popover: var(--gs-pop-bg) !important;
+  --color-popover: var(--gs-pop-bg) !important;
   --popover-foreground: var(--gs-ink) !important;
   --border: var(--gs-line) !important;
   --color-border: var(--gs-line) !important;
@@ -144,523 +452,333 @@ html[data-agy-theme="google"] body.theme-dark {
   --primary: var(--gs-accent) !important;
 }
 
-/* 2. Base --------------------------------------------------- */
-html:not([data-agy-theme]),
-html:not([data-agy-theme]) body,
-html[data-agy-theme="google"],
-html[data-agy-theme="google"] body {
+/* ==================== 3. SHARED SKIN SKELETON ==================== */
+html:not([data-agy-theme="off"]) {
   background-color: var(--gs-bg) !important;
-  background-image:
-    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.032) 0%, transparent 44%),
-    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.022) 0%, transparent 42%),
-    radial-gradient(circle at 6% 92%, rgba(52, 168, 83, 0.018) 0%, transparent 42%),
-    radial-gradient(circle at 92% 94%, rgba(234, 67, 53, 0.020) 0%, transparent 44%) !important;
-  background-attachment: fixed !important;
   color: var(--gs-ink) !important;
   -webkit-font-smoothing: antialiased;
 }
-
-html:not([data-agy-theme]) body.theme-dark,
-html[data-agy-theme="google"] body.theme-dark {
-  background-image:
-    radial-gradient(circle at 88% 8%, rgba(66, 133, 244, 0.07) 0%, transparent 46%),
-    radial-gradient(circle at 8% 12%, rgba(251, 188, 4, 0.035) 0%, transparent 44%),
-    radial-gradient(circle at 6% 92%, rgba(52, 168, 83, 0.03) 0%, transparent 44%),
-    radial-gradient(circle at 92% 94%, rgba(234, 67, 53, 0.04) 0%, transparent 46%) !important;
+html:not([data-agy-theme="off"]) body {
+  background-color: var(--gs-bg) !important;
+  background-image: var(--gs-ambient) !important;
+  background-repeat: no-repeat !important;
+  color: var(--gs-ink) !important;
 }
 
-html:not([data-agy-theme]) ::selection,
-html[data-agy-theme="google"] ::selection {
-  background: rgba(66, 133, 244, 0.22) !important;
+html:not([data-agy-theme="off"]) ::selection {
+  background: var(--gs-accent-soft) !important;
 }
 
-html:not([data-agy-theme]) ::-webkit-scrollbar,
-html[data-agy-theme="google"] ::-webkit-scrollbar { width: 10px; height: 10px; }
-html:not([data-agy-theme]) ::-webkit-scrollbar-track,
-html[data-agy-theme="google"] ::-webkit-scrollbar-track { background: transparent; }
-html:not([data-agy-theme]) ::-webkit-scrollbar-thumb,
-html[data-agy-theme="google"] ::-webkit-scrollbar-thumb {
-  background: rgba(95, 99, 104, 0.22);
+html:not([data-agy-theme="off"]) ::-webkit-scrollbar { width: 10px; height: 10px; }
+html:not([data-agy-theme="off"]) ::-webkit-scrollbar-track { background: transparent; }
+html:not([data-agy-theme="off"]) ::-webkit-scrollbar-thumb {
+  background: rgba(110, 118, 129, 0.24);
   border-radius: 10px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
-html:not([data-agy-theme]) ::-webkit-scrollbar-thumb:hover,
-html[data-agy-theme="google"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(95, 99, 104, 0.36);
+html:not([data-agy-theme="off"]) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(110, 118, 129, 0.40);
   background-clip: content-box;
 }
 
-/* 3. Sidebar（冷雾蓝灰分层 + 清晰分组 + 左侧指示选中态） -------- */
-html:not([data-agy-theme]) div[role="navigation"].bg-sidebar,
-html:not([data-agy-theme]) div[role="navigation"][aria-label="Sidebar"],
-html[data-agy-theme="google"] div[role="navigation"].bg-sidebar,
-html[data-agy-theme="google"] div[role="navigation"][aria-label="Sidebar"] {
+/* Sidebar Hierarchy (applies cleanly to all 6 skins + off minimal) */
+div[role="navigation"].bg-sidebar,
+div[role="navigation"][aria-label="Sidebar"] {
   background: var(--gs-side) !important;
   border-right: 1px solid var(--gs-side-border) !important;
-  box-shadow: inset -1px 0 0 rgba(26, 115, 232, 0.04) !important;
 }
-
-html:not([data-agy-theme]) div[role="navigation"] .bg-sidebar,
-html[data-agy-theme="google"] div[role="navigation"] .bg-sidebar {
+div[role="navigation"] .bg-sidebar {
   background: var(--gs-side) !important;
   background-color: var(--gs-side) !important;
 }
-
-/* 分组区块标题（插件 / 置顶会话 / 项目 / 历史会话）：清晰分割与高辨识色阶 */
-html:not([data-agy-theme]) div[role="navigation"] [class*="group/section-header"],
-html[data-agy-theme="google"] div[role="navigation"] [class*="group/section-header"] {
+div[role="navigation"] [class*="group/section-header"] {
   background: var(--gs-side) !important;
   background-color: var(--gs-side) !important;
   border-top: 1px solid var(--gs-side-sep) !important;
   margin-top: 8px !important;
   padding-top: 10px !important;
 }
-
-html:not([data-agy-theme]) div[role="navigation"].bg-sidebar .text-xs,
-html:not([data-agy-theme]) div[role="navigation"].bg-sidebar h2,
-html:not([data-agy-theme]) div[role="navigation"].bg-sidebar span.text-xs,
-html[data-agy-theme="google"] div[role="navigation"].bg-sidebar .text-xs,
-html[data-agy-theme="google"] div[role="navigation"].bg-sidebar h2,
-html[data-agy-theme="google"] div[role="navigation"].bg-sidebar span.text-xs {
+div[role="navigation"].bg-sidebar > div:last-child {
+  border-top: 1px solid var(--gs-side-sep) !important;
+}
+html:not([data-agy-theme="off"]) div[role="navigation"].bg-sidebar .text-xs,
+html:not([data-agy-theme="off"]) div[role="navigation"].bg-sidebar h2,
+html:not([data-agy-theme="off"]) div[role="navigation"].bg-sidebar span.text-xs {
   color: var(--gs-ink-3) !important;
   font-weight: 600 !important;
   font-size: 11.5px !important;
   letter-spacing: 0.03em !important;
 }
 
-/* 顶部快捷项与插件项（自动化任务 / 扩展与定制 / 插件列表） */
-html:not([data-agy-theme]) div[role="navigation"] button.agy-button-custom,
-html:not([data-agy-theme]) div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]),
-html[data-agy-theme="google"] div[role="navigation"] button.agy-button-custom,
-html[data-agy-theme="google"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]) {
+/* Sidebar Quick Actions & Rows */
+div[role="navigation"] button.agy-button-custom,
+div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]) {
   border-radius: 9px !important;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+  transition: background-color 0.12s ease, color 0.12s ease !important;
 }
-
-html:not([data-agy-theme]) div[role="navigation"] button.agy-button-custom:hover,
-html:not([data-agy-theme]) div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover,
-html[data-agy-theme="google"] div[role="navigation"] button.agy-button-custom:hover,
-html[data-agy-theme="google"] div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover {
+div[role="navigation"] button.agy-button-custom:hover,
+div[role="navigation"] a.agy-button-custom:not([data-testid="new-conversation-button"]):hover {
   background: var(--gs-side-elev) !important;
   color: var(--gs-accent) !important;
-  box-shadow: 0 1px 2px rgba(26, 56, 102, 0.07) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* 会话行：清晰层次 + 悬停微浮卡 + 选中高区分度柔蓝指示卡 */
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"],
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"] {
+div[data-testid="conversation-row-sidebar"] {
   position: relative !important;
   border: none !important;
   border-radius: 9px !important;
   margin: 1.5px 6px !important;
   padding: 6px 10px !important;
-  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease !important;
+  transition: background-color 0.12s ease, color 0.12s ease !important;
   --row-bg: var(--gs-side);
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]::before,
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]::after,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]::before,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]::after {
+div[data-testid="conversation-row-sidebar"]::before,
+div[data-testid="conversation-row-sidebar"]::after {
   display: none !important;
   content: none !important;
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]:hover,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]:hover {
+div[data-testid="conversation-row-sidebar"]:hover {
   background: var(--gs-side-elev) !important;
-  box-shadow: 0 1px 3px rgba(26, 56, 102, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07) !important;
   --row-bg: var(--gs-side-elev);
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"]:hover span,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"]:hover span {
+div[data-testid="conversation-row-sidebar"]:hover span {
   color: var(--gs-accent) !important;
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"][data-selected="true"],
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"][data-selected="true"],
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary {
+div[data-testid="conversation-row-sidebar"][data-selected="true"],
+div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary {
   border: none !important;
   background: var(--gs-row-selected) !important;
   box-shadow:
     inset 3px 0 0 var(--gs-accent),
     inset 0 0 0 1px var(--gs-row-selected-border),
-    0 1px 2px rgba(26, 115, 232, 0.08) !important;
+    0 1px 2px rgba(0, 0, 0, 0.06) !important;
   --row-bg: var(--gs-row-selected);
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span {
+div[data-testid="conversation-row-sidebar"][data-selected="true"] span,
+div[data-testid="conversation-row-sidebar"].bg-sidebar-secondary span {
   color: var(--gs-accent-strong) !important;
   font-weight: 600 !important;
 }
-
-html:not([data-agy-theme]) div[data-testid="conversation-row-sidebar"] .agy-row-actions,
-html[data-agy-theme="google"] div[data-testid="conversation-row-sidebar"] .agy-row-actions {
+div[data-testid="conversation-row-sidebar"] .agy-row-actions {
   background: linear-gradient(to right, transparent 0%, var(--row-bg) 32%) !important;
 }
 
-/* 新建对话：Google 专属白卡 + 常驻柔和四色渐变边框（悬停点亮） */
-html:not([data-agy-theme]) a[data-testid="new-conversation-button"],
-html[data-agy-theme="google"] a[data-testid="new-conversation-button"] {
+/* New Conversation Pill with Theme Edge */
+a[data-testid="new-conversation-button"] {
   position: relative !important;
-  border-radius: 9999px !important;
+  border-radius: var(--gs-radius) !important;
   background: var(--gs-side-elev) !important;
   border: none !important;
-  box-shadow: 0 1px 3px rgba(26, 56, 102, 0.08), 0 3px 10px rgba(66, 133, 244, 0.07) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07) !important;
   color: var(--gs-accent) !important;
   font-weight: 600 !important;
   height: 36px !important;
-  transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+  transition: transform 0.16s ease, box-shadow 0.2s ease !important;
 }
-
-html:not([data-agy-theme]) a[data-testid="new-conversation-button"]::before,
-html[data-agy-theme="google"] a[data-testid="new-conversation-button"]::before {
+a[data-testid="new-conversation-button"]::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
   border-radius: inherit !important;
-  padding: 1.5px !important;
-  background: var(--gs-quad-soft) !important;
+  padding: var(--gs-edge-w) !important;
+  background: var(--gs-edge-soft) !important;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
   -webkit-mask-composite: xor !important;
   mask-composite: exclude !important;
   opacity: 1 !important;
-  transition: background 0.2s ease, opacity 0.2s ease !important;
   pointer-events: none !important;
 }
-
-html:not([data-agy-theme]) a[data-testid="new-conversation-button"]:hover,
-html[data-agy-theme="google"] a[data-testid="new-conversation-button"]:hover {
-  box-shadow: 0 2px 12px rgba(66, 133, 244, 0.20) !important;
+a[data-testid="new-conversation-button"]:hover {
   transform: translateY(-0.5px);
+  box-shadow: 0 2px 12px var(--gs-accent-soft) !important;
+}
+a[data-testid="new-conversation-button"]:hover::before {
+  background: var(--gs-edge-focus) !important;
 }
 
-html:not([data-agy-theme]) a[data-testid="new-conversation-button"]:hover::before,
-html[data-agy-theme="google"] a[data-testid="new-conversation-button"]:hover::before {
-  background: var(--gs-quad) !important;
-}
-
-/* 侧栏底部设置区收口分割 */
-html:not([data-agy-theme]) div[role="navigation"].bg-sidebar > div:last-child,
-html[data-agy-theme="google"] div[role="navigation"].bg-sidebar > div:last-child {
-  border-top: 1px solid var(--gs-side-sep) !important;
-}
-
-/* 4. Main surface ------------------------------------------- */
-html:not([data-agy-theme]) main,
-html:not([data-agy-theme]) div[class*="bg-background"]:not([role="dialog"]),
-html[data-agy-theme="google"] main,
-html[data-agy-theme="google"] div[class*="bg-background"]:not([role="dialog"]) {
+/* Main Surface */
+html:not([data-agy-theme="off"]) main,
+html:not([data-agy-theme="off"]) div[class*="bg-background"]:not([role="dialog"]) {
   background-color: transparent !important;
 }
-
-html:not([data-agy-theme]) .md-sticky-message-bleed,
-html:not([data-agy-theme]) div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions),
-html[data-agy-theme="google"] .md-sticky-message-bleed,
-html[data-agy-theme="google"] div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions) {
+html:not([data-agy-theme="off"]) .md-sticky-message-bleed,
+html:not([data-agy-theme="off"]) div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions) {
   display: none !important;
 }
 
-/* 5. Composer：Google 四色渐变细框 --------------------------- */
-html:not([data-agy-theme]) .surface-composer,
-html[data-agy-theme="google"] .surface-composer {
+/* Composer with Theme Edge */
+.surface-composer {
   position: relative !important;
   background: var(--gs-side-elev) !important;
   border: none !important;
   padding: 0 !important;
-  border-radius: 17px !important;
-  box-shadow:
-    0 1px 2px rgba(60, 64, 67, 0.06),
-    0 4px 16px rgba(66, 133, 244, 0.06) !important;
-  transition: box-shadow 0.2s ease !important;
+  border-radius: var(--gs-radius) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.04) !important;
 }
-
-html:not([data-agy-theme]) .surface-composer::after,
-html[data-agy-theme="google"] .surface-composer::after {
+.surface-composer::after {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
   border-radius: inherit !important;
-  padding: 1.5px !important;
-  background: var(--gs-quad-soft) !important;
+  padding: var(--gs-edge-w) !important;
+  background: var(--gs-edge-soft) !important;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
   -webkit-mask-composite: xor !important;
   mask-composite: exclude !important;
   pointer-events: none !important;
   z-index: 2 !important;
 }
-
-html:not([data-agy-theme]) .surface-composer:focus-within,
-html[data-agy-theme="google"] .surface-composer:focus-within {
-  box-shadow:
-    0 1px 3px rgba(60, 64, 67, 0.07),
-    0 6px 22px rgba(66, 133, 244, 0.14) !important;
+.surface-composer:focus-within {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 6px 22px var(--gs-accent-soft) !important;
 }
-
-html:not([data-agy-theme]) .surface-composer:focus-within::after,
-html[data-agy-theme="google"] .surface-composer:focus-within::after {
-  background: var(--gs-quad) !important;
+.surface-composer:focus-within::after {
+  background: var(--gs-edge-focus) !important;
 }
-
-html:not([data-agy-theme]) .surface-composer-card,
-html[data-agy-theme="google"] .surface-composer-card {
+.surface-composer-card {
   background: var(--gs-side-elev) !important;
   border: none !important;
-  border-radius: 15.5px !important;
+  border-radius: calc(var(--gs-radius) - 1.5px) !important;
   box-shadow: none !important;
 }
-
-html:not([data-agy-theme]) .surface-composer-card p.pointer-events-none,
-html[data-agy-theme="google"] .surface-composer-card p.pointer-events-none {
+html:not([data-agy-theme="off"]) .surface-composer-card p.pointer-events-none {
   color: var(--gs-ink-3) !important;
   opacity: 1 !important;
 }
 
-/* 语音实时钮 */
-html:not([data-agy-theme]) span[data-testid="voice-live-pill"],
-html[data-agy-theme="google"] span[data-testid="voice-live-pill"] {
+/* Voice Live Pill & Mic */
+html:not([data-agy-theme="off"]) span[data-testid="voice-live-pill"] {
   background: var(--gs-side-elev) !important;
   color: var(--gs-accent) !important;
-  border: 1px solid rgba(66, 133, 244, 0.30) !important;
-  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.06) !important;
+  border: 1px solid var(--gs-row-selected-border) !important;
 }
-html:not([data-agy-theme]) span[data-testid="voice-live-pill"]:hover,
-html[data-agy-theme="google"] span[data-testid="voice-live-pill"]:hover {
+html:not([data-agy-theme="off"]) span[data-testid="voice-live-pill"]:hover {
   background: var(--gs-accent-soft) !important;
   opacity: 1 !important;
 }
-
-/* 麦克风 */
-html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"],
-html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"] {
+html:not([data-agy-theme="off"]) button[data-tooltip-id="input-send-button-record-tooltip"] {
   background: transparent !important;
   box-shadow: none !important;
 }
-html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"] svg,
-html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"] svg {
+html:not([data-agy-theme="off"]) button[data-tooltip-id="input-send-button-record-tooltip"] svg {
   color: var(--gs-ink-2) !important;
 }
-html:not([data-agy-theme]) button[data-tooltip-id="input-send-button-record-tooltip"]:hover,
-html[data-agy-theme="google"] button[data-tooltip-id="input-send-button-record-tooltip"]:hover {
-  background: rgba(95, 99, 104, 0.08) !important;
-}
 
-/* 发送键（严格限定在聊天输入框内，绝不误伤设置页含“发送”字样的分段开关） */
-html:not([data-agy-theme]) button[data-testid="input-send-button"],
-html:not([data-agy-theme]) .surface-composer button[aria-label*="Send"],
-html:not([data-agy-theme]) .surface-composer button[aria-label*="发送"],
-html[data-agy-theme="google"] button[data-testid="input-send-button"],
-html[data-agy-theme="google"] .surface-composer button[aria-label*="Send"],
-html[data-agy-theme="google"] .surface-composer button[aria-label*="发送"] {
+/* Send Button (strictly scoped inside .surface-composer so Settings toggles are NEVER touched!) */
+html:not([data-agy-theme="off"]) button[data-testid="input-send-button"],
+html:not([data-agy-theme="off"]) .surface-composer button[aria-label*="Send"],
+html:not([data-agy-theme="off"]) .surface-composer button[aria-label*="发送"] {
   background: var(--gs-accent) !important;
   color: #ffffff !important;
   background-image: none !important;
-  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.28) !important;
   transition: background 0.16s ease !important;
 }
-html:not([data-agy-theme]) button[data-testid="input-send-button"]:hover,
-html:not([data-agy-theme]) .surface-composer button[aria-label*="Send"]:hover,
-html:not([data-agy-theme]) .surface-composer button[aria-label*="发送"]:hover,
-html[data-agy-theme="google"] button[data-testid="input-send-button"]:hover,
-html[data-agy-theme="google"] .surface-composer button[aria-label*="Send"]:hover,
-html[data-agy-theme="google"] .surface-composer button[aria-label*="发送"]:hover {
+html:not([data-agy-theme="off"]) button[data-testid="input-send-button"]:hover,
+html:not([data-agy-theme="off"]) .surface-composer button[aria-label*="Send"]:hover,
+html:not([data-agy-theme="off"]) .surface-composer button[aria-label*="发送"]:hover {
   background: var(--gs-accent-hover) !important;
 }
 
-/* 正文与链接 */
-html:not([data-agy-theme]) [data-quotable="true"] .markdown-body,
-html:not([data-agy-theme]) [data-testid="planner-response-text"],
-html[data-agy-theme="google"] [data-quotable="true"] .markdown-body,
-html[data-agy-theme="google"] [data-testid="planner-response-text"] {
+/* Text & Links */
+html:not([data-agy-theme="off"]) [data-quotable="true"] .markdown-body,
+html:not([data-agy-theme="off"]) [data-testid="planner-response-text"] {
   color: var(--gs-ink) !important;
 }
+html:not([data-agy-theme="off"]) a[href^="http"] { color: var(--gs-accent) !important; }
+html:not([data-agy-theme="off"]) a[href^="http"]:hover { color: var(--gs-accent-hover) !important; }
 
-html:not([data-agy-theme]) a[href^="http"],
-html[data-agy-theme="google"] a[href^="http"] { color: var(--gs-accent) !important; }
-html:not([data-agy-theme]) a[href^="http"]:hover,
-html[data-agy-theme="google"] a[href^="http"]:hover { color: var(--gs-accent-hover) !important; }
-
-/* 6. 浮层与设置弹窗（仅 Google 主题，区分亮/暗模式） ----------- */
-html:not([data-agy-theme]) [data-radix-popper-content-wrapper],
-html:not([data-agy-theme]) [role="menu"],
-html[data-agy-theme="google"] [data-radix-popper-content-wrapper],
-html[data-agy-theme="google"] [role="menu"] {
+/* Popovers, Menus, Tooltips & Settings Dialog (Opaque in both light & dark modes) */
+html:not([data-agy-theme="off"]) [data-radix-popper-content-wrapper],
+html:not([data-agy-theme="off"]) [role="menu"] {
   z-index: 999999 !important;
 }
-
-html:not([data-agy-theme]) body:not(.theme-dark) [role="dialog"],
-html:not([data-agy-theme]) body:not(.theme-dark) [role="menu"],
-html:not([data-agy-theme]) body:not(.theme-dark) [role="tooltip"],
-html:not([data-agy-theme]) body:not(.theme-dark) [role="listbox"],
-html:not([data-agy-theme]) body:not(.theme-dark) [data-radix-menu-content],
-html:not([data-agy-theme]) body:not(.theme-dark) [data-radix-tooltip-content],
-html:not([data-agy-theme]) body:not(.theme-dark) div[data-side][role="tooltip"],
-html:not([data-agy-theme]) body:not(.theme-dark) div[class*="popover-content"],
-html:not([data-agy-theme]) body:not(.theme-dark) div[class*="tooltip"],
-html:not([data-agy-theme]) body:not(.theme-dark) div[class*="dropdown-content"],
-html:not([data-agy-theme]) body:not(.theme-dark) .settings-modal-container,
-html:not([data-agy-theme]) body:not(.theme-dark) div[class*="modal-container"],
-html[data-agy-theme="google"] body:not(.theme-dark) [role="dialog"],
-html[data-agy-theme="google"] body:not(.theme-dark) [role="menu"],
-html[data-agy-theme="google"] body:not(.theme-dark) [role="tooltip"],
-html[data-agy-theme="google"] body:not(.theme-dark) [role="listbox"],
-html[data-agy-theme="google"] body:not(.theme-dark) [data-radix-menu-content],
-html[data-agy-theme="google"] body:not(.theme-dark) [data-radix-tooltip-content],
-html[data-agy-theme="google"] body:not(.theme-dark) div[data-side][role="tooltip"],
-html[data-agy-theme="google"] body:not(.theme-dark) div[class*="popover-content"],
-html[data-agy-theme="google"] body:not(.theme-dark) div[class*="tooltip"],
-html[data-agy-theme="google"] body:not(.theme-dark) div[class*="dropdown-content"],
-html[data-agy-theme="google"] body:not(.theme-dark) .settings-modal-container,
-html[data-agy-theme="google"] body:not(.theme-dark) div[class*="modal-container"] {
-  --background: #ffffff !important;
-  --bg-canvas: #ffffff !important;
-  --color-background: #ffffff !important;
-  --popover: #ffffff !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+html:not([data-agy-theme="off"]) [role="dialog"],
+html:not([data-agy-theme="off"]) [role="menu"],
+html:not([data-agy-theme="off"]) [role="tooltip"],
+html:not([data-agy-theme="off"]) [role="listbox"],
+html:not([data-agy-theme="off"]) [data-radix-menu-content],
+html:not([data-agy-theme="off"]) [data-radix-tooltip-content],
+html:not([data-agy-theme="off"]) div[data-side][role="tooltip"],
+html:not([data-agy-theme="off"]) div[class*="popover-content"],
+html:not([data-agy-theme="off"]) div[class*="tooltip"],
+html:not([data-agy-theme="off"]) div[class*="dropdown-content"],
+html:not([data-agy-theme="off"]) .settings-modal-container,
+html:not([data-agy-theme="off"]) div[class*="modal-container"] {
+  --background: var(--gs-pop-bg) !important;
+  --bg-canvas: var(--gs-pop-bg) !important;
+  --color-background: var(--gs-pop-bg) !important;
+  --popover: var(--gs-pop-bg) !important;
+  background: var(--gs-pop-bg) !important;
+  background-color: var(--gs-pop-bg) !important;
   background-image: none !important;
   opacity: 1 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-
-/* 暗色模式下浮层与设置弹窗深炭实底，被动跟随官方暗色且防透底 */
-html:not([data-agy-theme]) body.theme-dark [role="dialog"],
-html:not([data-agy-theme]) body.theme-dark [role="menu"],
-html:not([data-agy-theme]) body.theme-dark [role="tooltip"],
-html:not([data-agy-theme]) body.theme-dark [role="listbox"],
-html:not([data-agy-theme]) body.theme-dark [data-radix-menu-content],
-html:not([data-agy-theme]) body.theme-dark [data-radix-tooltip-content],
-html:not([data-agy-theme]) body.theme-dark div[class*="popover-content"],
-html:not([data-agy-theme]) body.theme-dark div[class*="dropdown-content"],
-html:not([data-agy-theme]) body.theme-dark .settings-modal-container,
-html[data-agy-theme="google"] body.theme-dark [role="dialog"],
-html[data-agy-theme="google"] body.theme-dark [role="menu"],
-html[data-agy-theme="google"] body.theme-dark [role="tooltip"],
-html[data-agy-theme="google"] body.theme-dark [role="listbox"],
-html[data-agy-theme="google"] body.theme-dark [data-radix-menu-content],
-html[data-agy-theme="google"] body.theme-dark [data-radix-tooltip-content],
-html[data-agy-theme="google"] body.theme-dark div[class*="popover-content"],
-html[data-agy-theme="google"] body.theme-dark div[class*="dropdown-content"],
-html[data-agy-theme="google"] body.theme-dark .settings-modal-container {
-  --background: #161d26 !important;
-  --bg-canvas: #161d26 !important;
-  --color-background: #161d26 !important;
-  --popover: #161d26 !important;
-  background: #161d26 !important;
-  background-color: #161d26 !important;
-  background-image: none !important;
-  opacity: 1 !important;
-}
-
-html:not([data-agy-theme]) [role="menu"],
-html:not([data-agy-theme]) [role="listbox"],
-html:not([data-agy-theme]) [data-radix-menu-content],
-html:not([data-agy-theme]) div[class*="dropdown-content"],
-html:not([data-agy-theme]) div[class*="popover-content"],
-html[data-agy-theme="google"] [role="menu"],
-html[data-agy-theme="google"] [role="listbox"],
-html[data-agy-theme="google"] [data-radix-menu-content],
-html[data-agy-theme="google"] div[class*="dropdown-content"],
-html[data-agy-theme="google"] div[class*="popover-content"] {
+html:not([data-agy-theme="off"]) [role="menu"],
+html:not([data-agy-theme="off"]) [role="listbox"],
+html:not([data-agy-theme="off"]) [data-radix-menu-content],
+html:not([data-agy-theme="off"]) div[class*="dropdown-content"],
+html:not([data-agy-theme="off"]) div[class*="popover-content"] {
   border: 1px solid var(--gs-line) !important;
   border-radius: 12px !important;
-  box-shadow: 0 2px 6px rgba(60, 64, 67, 0.06), 0 12px 32px rgba(60, 64, 67, 0.12) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12) !important;
 }
-
-html:not([data-agy-theme]) [role="menuitem"]:hover,
-html:not([data-agy-theme]) [role="menuitemradio"]:hover,
-html:not([data-agy-theme]) [role="menuitem"][data-highlighted],
-html:not([data-agy-theme]) [role="menuitemradio"][data-highlighted],
-html[data-agy-theme="google"] [role="menuitem"]:hover,
-html[data-agy-theme="google"] [role="menuitemradio"]:hover,
-html[data-agy-theme="google"] [role="menuitem"][data-highlighted],
-html[data-agy-theme="google"] [role="menuitemradio"][data-highlighted] {
+html:not([data-agy-theme="off"]) [role="menuitem"]:hover,
+html:not([data-agy-theme="off"]) [role="menuitemradio"]:hover,
+html:not([data-agy-theme="off"]) [role="menuitem"][data-highlighted],
+html:not([data-agy-theme="off"]) [role="menuitemradio"][data-highlighted] {
   background: var(--gs-side-hover) !important;
 }
-
-html:not([data-agy-theme]) [role="tooltip"],
-html:not([data-agy-theme]) [data-radix-tooltip-content],
-html:not([data-agy-theme]) div[data-side][role="tooltip"],
-html:not([data-agy-theme]) div[class*="tooltip"],
-html[data-agy-theme="google"] [role="tooltip"],
-html[data-agy-theme="google"] [data-radix-tooltip-content],
-html[data-agy-theme="google"] div[data-side][role="tooltip"],
-html[data-agy-theme="google"] div[class*="tooltip"] {
+html:not([data-agy-theme="off"]) [role="tooltip"],
+html:not([data-agy-theme="off"]) [data-radix-tooltip-content],
+html:not([data-agy-theme="off"]) div[data-side][role="tooltip"],
+html:not([data-agy-theme="off"]) div[class*="tooltip"] {
   color: var(--gs-ink) !important;
   border: 1px solid var(--gs-line) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgba(60, 64, 67, 0.12) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
   z-index: 99999999 !important;
 }
-
-html:not([data-agy-theme]) [role="tooltip"] *,
-html:not([data-agy-theme]) [data-radix-tooltip-content] *,
-html[data-agy-theme="google"] [role="tooltip"] *,
-html[data-agy-theme="google"] [data-radix-tooltip-content] * {
+html:not([data-agy-theme="off"]) [role="tooltip"] *,
+html:not([data-agy-theme="off"]) [data-radix-tooltip-content] * {
   color: var(--gs-ink) !important;
 }
-
-html:not([data-agy-theme]) [role="dialog"],
-html:not([data-agy-theme]) .settings-modal-container,
-html[data-agy-theme="google"] [role="dialog"],
-html[data-agy-theme="google"] .settings-modal-container {
+html:not([data-agy-theme="off"]) [role="dialog"],
+html:not([data-agy-theme="off"]) .settings-modal-container {
   border: 1px solid var(--gs-line) !important;
   border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.10), 0 32px 80px rgba(60, 64, 67, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10), 0 32px 80px rgba(0, 0, 0, 0.18) !important;
   z-index: 99999 !important;
 }
-
-html:not([data-agy-theme]) .settings-modal-container aside,
-html:not([data-agy-theme]) .settings-modal-container div[class*="sidebar"],
-html:not([data-agy-theme]) .agy-dialog aside,
-html:not([data-agy-theme]) .agy-dialog div[class*="sidebar"],
-html[data-agy-theme="google"] .settings-modal-container aside,
-html[data-agy-theme="google"] .settings-modal-container div[class*="sidebar"],
-html[data-agy-theme="google"] .agy-dialog aside,
-html[data-agy-theme="google"] .agy-dialog div[class*="sidebar"] {
+html:not([data-agy-theme="off"]) .settings-modal-container aside,
+html:not([data-agy-theme="off"]) .settings-modal-container div[class*="sidebar"],
+html:not([data-agy-theme="off"]) .agy-dialog aside,
+html:not([data-agy-theme="off"]) .agy-dialog div[class*="sidebar"] {
   background: var(--gs-side) !important;
   background-color: var(--gs-side) !important;
   border-right: 1px solid var(--gs-side-border) !important;
 }
-
-html:not([data-agy-theme]) .settings-modal-container [aria-checked="true"],
-html:not([data-agy-theme]) .settings-modal-container [data-state="checked"][class*="border"],
-html[data-agy-theme="google"] .settings-modal-container [aria-checked="true"],
-html[data-agy-theme="google"] .settings-modal-container [data-state="checked"][class*="border"] {
+html:not([data-agy-theme="off"]) .settings-modal-container [aria-checked="true"],
+html:not([data-agy-theme="off"]) .settings-modal-container [data-state="checked"][class*="border"] {
   border-color: var(--gs-accent) !important;
-  background: rgba(66, 133, 244, 0.06) !important;
+  background: var(--gs-accent-soft) !important;
   box-shadow: 0 0 0 3px var(--gs-accent-soft) !important;
 }
-
-html:not([data-agy-theme]) button[role="switch"][data-state="checked"],
-html:not([data-agy-theme]) button[role="switch"][aria-checked="true"],
-html[data-agy-theme="google"] button[role="switch"][data-state="checked"],
-html[data-agy-theme="google"] button[role="switch"][aria-checked="true"] {
+html:not([data-agy-theme="off"]) button[role="switch"][data-state="checked"],
+html:not([data-agy-theme="off"]) button[role="switch"][aria-checked="true"] {
   background: var(--gs-accent) !important;
 }
-
-html:not([data-agy-theme]) div[data-state="open"].fixed.inset-0:not([role="dialog"]),
-html:not([data-agy-theme]) div[class*="backdrop"],
-html[data-agy-theme="google"] div[data-state="open"].fixed.inset-0:not([role="dialog"]),
-html[data-agy-theme="google"] div[class*="backdrop"] {
-  background: rgba(32, 33, 36, 0.26) !important;
+html:not([data-agy-theme="off"]) div[data-state="open"].fixed.inset-0:not([role="dialog"]),
+html:not([data-agy-theme="off"]) div[class*="backdrop"] {
+  background: rgba(20, 22, 28, 0.28) !important;
 }
-
-html:not([data-agy-theme]) *:focus-visible,
-html[data-agy-theme="google"] *:focus-visible {
+html:not([data-agy-theme="off"]) *:focus-visible {
   outline-color: var(--gs-accent-ring) !important;
 }
 
-/* ============================================================
-   7. 跨三套主题共享的结构保障（不含皮肤色彩）
-   ============================================================ */
+/* ==================== 4. UNIVERSAL STRUCTURAL SAFEGUARDS ==================== */
 .agy-hover-actions,
 div.agy-hover-actions,
 .agy-aux-tab .agy-hover-actions,
@@ -670,7 +788,6 @@ div.agy-hover-actions,
   opacity: 1 !important;
   pointer-events: auto !important;
 }
-
 .agy-aux-tab .agy-hover-actions button,
 .agy-aux-tab button[aria-label*="关闭"],
 .agy-aux-tab button[aria-label*="Close"] {
@@ -684,14 +801,27 @@ div.agy-hover-actions,
   justify-content: center !important;
   z-index: 20 !important;
 }
-
 #hakimi-dock { display: none !important; }
-
 .agy-muse-scroll-pad {
   padding-bottom: 78px !important;
   scroll-padding-bottom: 86px !important;
 }
-
 @media (prefers-reduced-motion: reduce) {
-  #hakimi-muse-stage *, #hakimi-say { animation: none !important; transition: none !important; }
+  #hakimi-muse-stage *, #hakimi-say, #agy-theme-dial-pop * { animation: none !important; transition: none !important; }
+}
+
+/* 0-frame native model menu stealth in user-origin stylesheet */
+html[data-agy-mp-capturing="1"] [data-radix-popper-content-wrapper],
+html[data-agy-mp-capturing="1"] [role="menu"],
+html[data-agy-mp-capturing="1"] [role="listbox"],
+html[data-agy-mp-capturing="1"] [data-radix-menu-content],
+html[data-agy-mp-capturing="1"] [data-floating-ui-portal] > *,
+html:not(#_) .agy-native-model-stealth,
+html:not(#_) [role="menu"].agy-native-model-stealth,
+html:not(#_) [role="listbox"].agy-native-model-stealth {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
 }

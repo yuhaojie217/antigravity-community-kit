@@ -87,6 +87,11 @@ def main():
             shutil.copy2(src, dst)
             print(f"[ok] deployed {dst}")
 
+    # 1b. Deploy external lazy-loaded character outfits (WebP)
+    outfits_src = KIT_ROOT / "theme" / "outfits"
+    if outfits_src.exists():
+        copy_tree_clean(outfits_src, APP_DIR / "outfits", args.dry_run)
+
     # 2. Deploy injector scripts
     copy_tree_clean(KIT_ROOT / "injector", INJECTOR_DIR, args.dry_run)
 
