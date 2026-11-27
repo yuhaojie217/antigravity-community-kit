@@ -203,6 +203,8 @@ function translateText(text) {
 
   if (exactMap.has(trimmed)) return text.replace(trimmed, exactMap.get(trimmed));
 
+  // Never run substring phrase replacement on long prose/sentences (prevents mixed CN/EN mangling in AI replies)
+  if (trimmed.length > 42) return text;
   let result = text;
   let replaced = false;
   for (let i = 0; i < subPhrases.length; i++) {
@@ -216,7 +218,7 @@ function translateText(text) {
 }
 
 const EXCLUDE_SEL =
-  '[data-quotable="true"], [data-testid="planner-response-text"], textarea, pre, code, ' +
+  '[data-quotable="true"], [data-testid="planner-response-text"], .markdown-body, .prose, [class*="markdown"], [class*="prose"], [contenteditable="true"], textarea, pre, code, ' +
   '.monaco-editor, .cm-content, .hljs, .notranslate, ' +
   '#hakimi-muse-stage, #hakimi-say, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-model-picker';
 
@@ -1401,9 +1403,14 @@ let lastMuseLayoutKey = '';
 let composerResizeObs = null;
 
 function isBusy() {
-  return !!document.querySelector(
-    'button[data-testid="input-stop-button"], [data-testid="running-items-card"], .surface-composer button[aria-label*="停止"], .surface-composer button[aria-label*="Stop"]'
-  );
+  if (document.querySelector(
+    'button[data-testid="input-stop-button"], [data-testid="running-items-card"], .surface-composer button[aria-label*="停止"], .surface-composer button[aria-label*="Stop"], .surface-composer button[aria-label*="Cancel"], .surface-composer button[aria-label*="取消"]'
+  )) {
+    return true;
+  }
+  // Fallback: active spinner/pulse indicator inside chat main area (excluding our own controls)
+  const ind = document.querySelector('main [class*="animate-spin"], main [class*="animate-pulse"]');
+  return !!(ind && !ind.closest('#hakimi-muse-stage, #agy-pulse-drawer, #agy-codex-ctx-popover'));
 }
 
 function detectWorkActivity(force) {
@@ -1438,12 +1445,13 @@ function detectWorkActivity(force) {
   }
 
   let label = statusText;
-  if (!label || label.length > 22) {
+  if (!label || label.length > 26) {
     label = mode === 'laptop' ? '正在敲电脑处理…' : '正在伏案构思…';
   }
   const m = window.__agyLastTelemetry && window.__agyLastTelemetry.metrics;
   const rate = m && (m.latestStepTokPerSec || m.avgTokPerSec);
-  if (rate && rate > 5 && label.length <= 12) {
+  if (rate && rate > 3) {
+    if (label.length > 14) label = label.slice(0, 13) + '…';
     label += ' · ' + Math.round(rate) + ' t/s';
   }
   lastWorkAct = { mode, label };
@@ -2500,7 +2508,7 @@ const MODEL_NAME_RX = /\b(Gemini|Claude|GPT|Orchestrator|Opus|Sonnet|Flash|Neon|
 const EFFORT_TAIL_RX = /^(.*?)\s+(Minimal|Low|Medium|High|X-?High|Ex\s*High|Extra\s*High|Max)\s*$/i;
 const EFFORT_WORD_RX = /^(Minimal|Low|Medium|High|X-?High|Ex\s*High|Extra\s*High|Max)$/i;
 
-const MP_EFFORT_STORE = 'agy-mp-effort-cache:v2';
+const MP_EFFORT_STORE = 'agy-mp-effort-cache:v3';
 
 function loadPersistedEffortCache() {
   const out = Object.create(null);
@@ -2800,8 +2808,18 @@ function waitMs(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function findVisibleSubmenuOptions(mainRootEl, isOrch) {
-  // Search ALL compact floating containers (including siblings/descendants inside the same portal, ONLY excluding mainRootEl itself!)
+function splitModelAndEffort(raw) {
+  const s = String(raw || '').replace(/\s+/g, ' ').trim();
+  const m = s.match(EFFORT_TAIL_RX);
+  if (m) return { base: m[1].trim(), effort: m[2].trim() };
+  return { base: s, effort: '' };
+}
+
+function findVisibleSubmenuOptions(excludeRoots, mode) {
+  const isOrch = mode === 'orch' || mode === true;
+  const effortOnly = mode === 'effort';
+  const excludes = Array.isArray(excludeRoots) ? excludeRoots.filter(Boolean) : (excludeRoots ? [excludeRoots] : []);
+  // Search ALL compact floating containers excluding already-known parent menus
   const pools = document.querySelectorAll(
     '[role="menu"], [data-radix-menu-content], [role="listbox"], [data-radix-popper-content-wrapper], [data-floating-ui-portal] > div, body > div'
   );
@@ -2809,10 +2827,17 @@ function findVisibleSubmenuOptions(mainRootEl, isOrch) {
   const maxH = isOrch ? 580 : 460;
   for (let i = pools.length - 1; i >= 0; i--) {
     const p = pools[i];
-    if (!p || p === mainRootEl || p.id === 'agy-model-picker' || p.closest('#agy-model-picker')) continue;
+    if (!p || p.id === 'agy-model-picker' || p.closest('#agy-model-picker')) continue;
     if (isMainAppShell(p)) continue;
-    // Never mistake an ancestor wrapper of the main model list for the submenu
-    if (mainRootEl && p.contains(mainRootEl)) continue;
+    let skip = false;
+    for (let eIdx = 0; eIdx < excludes.length; eIdx++) {
+      const ex = excludes[eIdx];
+      if (p === ex || p.contains(ex)) {
+        skip = true;
+        break;
+      }
+    }
+    if (skip) continue;
 
     const rc = p.getBoundingClientRect();
     if (rc.width < 50 || rc.width > maxW || rc.height < 40 || rc.height > maxH) continue;
@@ -2829,7 +2854,7 @@ function findVisibleSubmenuOptions(mainRootEl, isOrch) {
         const t = getSpacedText(d).replace(/[✓✔ⓘ>›]/g, '').trim();
         if (!t || t.length > (isOrch ? 80 : 48) || /^Thinking\s*effort$|^思考强度$/i.test(t)) return false;
         const dr = d.getBoundingClientRect();
-        return dr.height >= 18 && dr.height <= 64 && (isOrch || EFFORT_WORD_RX.test(t) || MODEL_NAME_RX.test(t));
+        return dr.height >= 18 && dr.height <= 64 && (isOrch || EFFORT_WORD_RX.test(t) || (!effortOnly && MODEL_NAME_RX.test(t)));
       });
     }
 
@@ -2844,24 +2869,71 @@ function findVisibleSubmenuOptions(mainRootEl, isOrch) {
       if (!lbl || lbl.length > (isOrch ? 80 : 48) || /^Thinking\s*effort$|^思考强度$/i.test(lbl)) continue;
       const isEff = EFFORT_WORD_RX.test(lbl);
       const isMod = MODEL_NAME_RX.test(lbl);
-      // For Orchestrator submenus, keep ALL native menu items (even custom/auto/fast names)
-      if (!isOrch && !isEff && !isMod) continue;
+      if (effortOnly) {
+        if (!isEff) continue;
+      } else if (!isOrch && !isEff && !isMod) {
+        continue;
+      }
       const k = lbl.toLowerCase();
       if (seen.has(k)) continue;
       seen.add(k);
+      const sp = isOrch ? splitModelAndEffort(lbl) : { base: lbl, effort: '' };
+      const hasNestedSub = isOrch && (el.getAttribute('aria-haspopup') === 'menu' || !!el.querySelector('svg.lucide-chevron-right') || !!sp.effort);
       opts.push({
         label: lbl,
+        base: sp.base,
+        effort: sp.effort,
+        hasNestedSub,
         short: shortEffortLabel(lbl),
         el,
         isEffort: isOrch ? false : isEff,
       });
     }
-    if (opts.length >= 2 && (isOrch || looksEffort || opts.every((o) => o.isEffort || MODEL_NAME_RX.test(o.label)))) {
+    if (effortOnly) {
+      if (opts.length >= 2 && opts.every((o) => o.isEffort)) {
+        markStealth(p);
+        return { root: p, opts, isEffort: true };
+      }
+    } else if (opts.length >= 2 && (isOrch || looksEffort || opts.every((o) => o.isEffort || MODEL_NAME_RX.test(o.label)))) {
       markStealth(p);
       return { root: p, opts, isEffort: isOrch ? false : (opts.every((o) => o.isEffort) || looksEffort) };
     }
   }
   return null;
+}
+
+function waitForDomMatch(finder, timeoutMs, retryStepFn) {
+  return new Promise((resolve) => {
+    const first = finder();
+    if (first) { resolve(first); return; }
+    let done = false;
+    let obs = null;
+    let timer = 0;
+    let retryTimer = 0;
+    let step = 0;
+    const finish = (val) => {
+      if (done) return;
+      done = true;
+      if (obs) try { obs.disconnect(); } catch (_) {}
+      if (timer) window.clearTimeout(timer);
+      if (retryTimer) window.clearInterval(retryTimer);
+      resolve(val || null);
+    };
+    obs = new MutationObserver(() => {
+      const hit = finder();
+      if (hit) finish(hit);
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    if (retryStepFn) {
+      retryTimer = window.setInterval(() => {
+        step += 1;
+        const hit = finder();
+        if (hit) { finish(hit); return; }
+        retryStepFn(step);
+      }, 36);
+    }
+    timer = window.setTimeout(() => finish(finder()), timeoutMs);
+  });
 }
 
 async function ensureStealthNativeMenuOpen() {
@@ -2876,18 +2948,69 @@ async function ensureStealthNativeMenuOpen() {
   document.documentElement.setAttribute('data-agy-mp-capturing', '1');
   mpState.rawBypassUntil = Date.now() + 450;
   dispatchRadixClick(trig);
-  for (let i = 0; i < 12; i++) {
-    await waitMs(20);
-    root = findNativeModelRoot();
-    if (root) {
-      markStealth(root);
-      document.documentElement.removeAttribute('data-agy-mp-capturing');
-      mpState.nativeRoot = root;
-      return root;
-    }
-  }
+  root = await waitForDomMatch(() => findNativeModelRoot(), 260);
   document.documentElement.removeAttribute('data-agy-mp-capturing');
-  return null;
+  if (root) {
+    markStealth(root);
+    mpState.nativeRoot = root;
+  }
+  return root;
+}
+
+async function hoverElementForSubmenu(rowEl, excludeRoots, isOrch) {
+  if (!rowEl) return null;
+  const trigEl =
+    rowEl.closest('[role="menuitem"][aria-haspopup="menu"]') ||
+    rowEl.closest('[aria-haspopup="menu"]') ||
+    rowEl.closest('[role="menuitem"]') ||
+    rowEl.querySelector('[aria-haspopup="menu"]') ||
+    rowEl;
+
+  const isNested3 = Array.isArray(excludeRoots) && excludeRoots.length >= 2;
+  if (isNested3) {
+    await waitMs(18);
+    if (!document.contains(trigEl)) return null;
+  }
+
+  const r = trigEl.getBoundingClientRect();
+  const cx = Math.round(r.left + Math.max(12, r.width * 0.65));
+  const cy = Math.round(r.top + Math.max(8, r.height * 0.5));
+
+  document.documentElement.setAttribute('data-agy-mp-capturing', '1');
+  const pOpts = { bubbles: true, cancelable: true, pointerType: 'mouse', isPrimary: true, clientX: cx, clientY: cy };
+  const mOpts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+  const fireHover = (dx) => {
+    try { trigEl.focus({ preventScroll: true }); } catch (_) {}
+    trigEl.dispatchEvent(new PointerEvent('pointerover', Object.assign({}, pOpts, { clientX: cx + dx })));
+    trigEl.dispatchEvent(new PointerEvent('pointerenter', Object.assign({}, pOpts, { bubbles: false, clientX: cx + dx })));
+    trigEl.dispatchEvent(new PointerEvent('pointermove', Object.assign({}, pOpts, { clientX: cx + dx })));
+    trigEl.dispatchEvent(new MouseEvent('mouseover', Object.assign({}, mOpts, { clientX: cx + dx })));
+    trigEl.dispatchEvent(new MouseEvent('mousemove', Object.assign({}, mOpts, { clientX: cx + dx })));
+  };
+  const fireRight = () => {
+    try { trigEl.focus({ preventScroll: true }); } catch (_) {}
+    trigEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, which: 39, bubbles: true, cancelable: true }));
+  };
+
+  // Instant dual trigger: focus + ArrowRight skips Radix's 100ms mouse-hover grace timer!
+  fireHover(0);
+  fireRight();
+
+  const sub = await waitForDomMatch(
+    () => (document.contains(trigEl) ? findVisibleSubmenuOptions(excludeRoots, isOrch) : null),
+    isNested3 ? 360 : 280,
+    (step) => {
+      if (!document.contains(trigEl)) return;
+      if (step === 1 || step === 3) fireHover(step + 1);
+      if (step === 2 || step === 5) fireRight();
+      if (step === 6 && trigEl.getAttribute('aria-haspopup') === 'menu') {
+        try { trigEl.focus({ preventScroll: true }); } catch (_) {}
+        trigEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+      }
+    }
+  );
+  document.documentElement.removeAttribute('data-agy-mp-capturing');
+  return sub;
 }
 
 async function openSubmenuForModel(mainRoot, modelBaseName) {
@@ -2895,45 +3018,7 @@ async function openSubmenuForModel(mainRoot, modelBaseName) {
   const row = parsed.items.find((x) => x.baseName.toLowerCase() === modelBaseName.toLowerCase());
   if (!row || !row.el) return null;
   const isOrch = row.family === 'orch' || /^Orchestrator\b/i.test(modelBaseName);
-
-  // Prefer explicit Radix SubTrigger element if nested or ancestor
-  const trigEl =
-    row.el.closest('[aria-haspopup="menu"]') ||
-    row.el.querySelector('[aria-haspopup="menu"]') ||
-    row.el;
-
-  const r = trigEl.getBoundingClientRect();
-  const cx = Math.round(r.left + r.width * 0.65);
-  const cy = Math.round(r.top + r.height * 0.5);
-
-  document.documentElement.setAttribute('data-agy-mp-capturing', '1');
-  const pOpts = { bubbles: true, cancelable: true, pointerType: 'mouse', isPrimary: true, clientX: cx, clientY: cy };
-  const mOpts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
-  trigEl.dispatchEvent(new PointerEvent('pointerover', pOpts));
-  trigEl.dispatchEvent(new PointerEvent('pointerenter', Object.assign({}, pOpts, { bubbles: false })));
-  trigEl.dispatchEvent(new PointerEvent('pointermove', pOpts));
-  trigEl.dispatchEvent(new MouseEvent('mouseover', mOpts));
-  trigEl.dispatchEvent(new MouseEvent('mouseenter', Object.assign({}, mOpts, { bubbles: false })));
-  trigEl.dispatchEvent(new MouseEvent('mousemove', mOpts));
-  try { trigEl.focus({ preventScroll: true }); } catch (_) {}
-
-  let sub = null;
-  for (let i = 0; i < 16; i++) {
-    await waitMs(22);
-    if (!document.contains(mainRoot)) break;
-    // Re-send a tiny pointermove on step 2 (Radix open timer starts after hover move)
-    if (i === 2) {
-      trigEl.dispatchEvent(new PointerEvent('pointermove', Object.assign({}, pOpts, { clientX: cx + 2 })));
-      trigEl.dispatchEvent(new MouseEvent('mousemove', Object.assign({}, mOpts, { clientX: cx + 2 })));
-    }
-    sub = findVisibleSubmenuOptions(mainRoot, isOrch);
-    if (sub) break;
-    if (i === 5) {
-      trigEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', code: 'ArrowRight', bubbles: true, cancelable: true }));
-    }
-  }
-  document.documentElement.removeAttribute('data-agy-mp-capturing');
-  return sub;
+  return hoverElementForSubmenu(row.el, [mainRoot], isOrch ? 'orch' : 'effort');
 }
 
 async function probeModelOptionsLive(modelBaseName) {
@@ -2950,6 +3035,9 @@ async function probeModelOptionsLive(modelBaseName) {
     if (sub && sub.opts.length >= 2) {
       mpState.effortCache[modelBaseName] = sub.opts.map((o) => ({
         label: o.label,
+        base: o.base || o.label,
+        effort: o.effort || '',
+        hasNestedSub: !!o.hasNestedSub,
         short: o.short,
         isEffort: o.isEffort,
       }));
@@ -2963,8 +3051,115 @@ async function probeModelOptionsLive(modelBaseName) {
   }
 }
 
+async function probeOrchSubEffortLive(orchName, subBase) {
+  const cacheKey = orchName + '::' + subBase;
+  if (!subBase || mpState.suppressAutoProbe || mpState.probingModel === cacheKey) return;
+  if (mpState.effortCache[cacheKey] && mpState.effortCache[cacheKey].length >= 2) return;
+
+  mpState.probingModel = cacheKey;
+  try {
+    const mainRoot = await ensureStealthNativeMenuOpen();
+    if (!mainRoot) return;
+    const sub2 = await openSubmenuForModel(mainRoot, orchName);
+    if (!sub2) return;
+    const row2 = sub2.opts.find((o) => (o.base || o.label).toLowerCase() === subBase.toLowerCase() || o.label.toLowerCase() === subBase.toLowerCase());
+    if (!row2 || !row2.el) return;
+    const sub3 = await hoverElementForSubmenu(row2.el, [mainRoot, sub2.root], 'effort');
+    if (sub3 && sub3.opts.length >= 2) {
+      mpState.effortCache[cacheKey] = sub3.opts.map((o) => ({
+        label: o.label,
+        short: o.short,
+        isEffort: true,
+      }));
+      savePersistedEffortCache(mpState.effortCache);
+      if (mpState.open && mpState.focusedName.toLowerCase() === orchName.toLowerCase()) {
+        renderModelPickerBody();
+      }
+    }
+  } finally {
+    if (mpState.probingModel === cacheKey) mpState.probingModel = '';
+  }
+}
+
+function applyOptimisticSelection(modelBaseName, nextEffortOrSub, isOrchSub) {
+  for (let i = 0; i < mpState.items.length; i++) {
+    const it = mpState.items[i];
+    it.isSelected = it.baseName.toLowerCase() === modelBaseName.toLowerCase();
+    if (it.isSelected && nextEffortOrSub) {
+      if (isOrchSub || it.family === 'orch') it.subLabel = nextEffortOrSub;
+      else it.effortLabel = nextEffortOrSub;
+    }
+  }
+  // Fast in-place text update on the list rows without destroying the slider mid-interaction!
+  const pop = document.getElementById('agy-model-picker');
+  if (pop) {
+    pop.querySelectorAll('.amp-row').forEach((row) => {
+      const m = (row.getAttribute('data-model') || '').toLowerCase();
+      const it = mpState.items.find((x) => x.baseName.toLowerCase() === m);
+      if (!it) return;
+      const chk = row.querySelector('.amp-check');
+      if (chk) chk.textContent = it.isSelected ? '✓' : '';
+      const eff = row.querySelector('.amp-eff-txt');
+      const txt = it.subLabel || it.effortLabel || '';
+      if (eff && txt) eff.textContent = txt;
+    });
+  }
+}
+
+async function flushPendingSwitch() {
+  const next = mpState.pendingSwitch;
+  if (!next) return;
+  mpState.pendingSwitch = null;
+  if (next.type === 'orch3') {
+    await triggerOrchSubEffortSelection(next.orchName, next.subBase, next.targetEffort);
+  } else if (next.type === 'sub2') {
+    await triggerSubOptionSelection(next.modelBaseName, next.targetLabel);
+  }
+}
+
+async function triggerOrchSubEffortSelection(orchName, subBase, targetEffort) {
+  // 0ms optimistic UI feedback
+  applyOptimisticSelection(orchName, subBase + ' ' + targetEffort, true);
+  if (mpState.busySwitching) {
+    mpState.pendingSwitch = { type: 'orch3', orchName, subBase, targetEffort };
+    return;
+  }
+  mpState.busySwitching = true;
+  try {
+    const mainRoot = await ensureStealthNativeMenuOpen();
+    if (!mainRoot) return;
+    const sub2 = await openSubmenuForModel(mainRoot, orchName);
+    if (!sub2) return;
+    const row2 = sub2.opts.find((o) => (o.base || o.label).toLowerCase() === subBase.toLowerCase() || o.label.toLowerCase() === subBase.toLowerCase());
+    if (!row2 || !row2.el) return;
+    const sub3 = await hoverElementForSubmenu(row2.el, [mainRoot, sub2.root], 'effort');
+    if (!sub3) return;
+    const cacheKey = orchName + '::' + subBase;
+    mpState.effortCache[cacheKey] = sub3.opts.map((o) => ({
+      label: o.label,
+      short: o.short,
+      isEffort: true,
+    }));
+    savePersistedEffortCache(mpState.effortCache);
+    const match3 = sub3.opts.find((o) => o.label.toLowerCase() === targetEffort.toLowerCase());
+    if (match3 && match3.el) {
+      dispatchRadixClick(match3.el);
+      applyOptimisticSelection(orchName, subBase + ' ' + match3.label, true);
+      window.setTimeout(() => enhanceModelTriggerButton(), 50);
+    }
+  } finally {
+    mpState.busySwitching = false;
+    void flushPendingSwitch();
+  }
+}
+
 async function triggerSubOptionSelection(modelBaseName, targetLabel) {
-  if (mpState.busySwitching) return;
+  // 0ms optimistic UI feedback
+  applyOptimisticSelection(modelBaseName, targetLabel, false);
+  if (mpState.busySwitching) {
+    mpState.pendingSwitch = { type: 'sub2', modelBaseName, targetLabel };
+    return;
+  }
   mpState.busySwitching = true;
   try {
     const mainRoot = await ensureStealthNativeMenuOpen();
@@ -2973,26 +3168,25 @@ async function triggerSubOptionSelection(modelBaseName, targetLabel) {
     if (!sub) return;
     mpState.effortCache[modelBaseName] = sub.opts.map((o) => ({
       label: o.label,
+      base: o.base || o.label,
+      effort: o.effort || '',
+      hasNestedSub: !!o.hasNestedSub,
       short: o.short,
       isEffort: o.isEffort,
     }));
     savePersistedEffortCache(mpState.effortCache);
-    const match = sub.opts.find((o) => o.label.toLowerCase() === targetLabel.toLowerCase());
+    const match = sub.opts.find((o) => o.label.toLowerCase() === targetLabel.toLowerCase() || (o.base && o.base.toLowerCase() === targetLabel.toLowerCase()));
     if (match && match.el) {
       dispatchRadixClick(match.el);
-      for (let i = 0; i < mpState.items.length; i++) {
-        const it = mpState.items[i];
-        it.isSelected = it.baseName.toLowerCase() === modelBaseName.toLowerCase();
-        if (it.isSelected) {
-          if (it.family === 'orch') it.subLabel = match.label;
-          else it.effortLabel = match.label;
-        }
+      applyOptimisticSelection(modelBaseName, match.label, false);
+      if (mpState.items.some((x) => x.baseName.toLowerCase() === modelBaseName.toLowerCase() && x.family === 'orch')) {
+        renderModelPickerBody();
       }
-      renderModelPickerBody();
-      window.setTimeout(() => enhanceModelTriggerButton(), 80);
+      window.setTimeout(() => enhanceModelTriggerButton(), 50);
     }
   } finally {
     mpState.busySwitching = false;
+    void flushPendingSwitch();
   }
 }
 
@@ -3112,6 +3306,128 @@ function displayEffortWord(raw) {
   return s;
 }
 
+function mountCodexEffortSlider(container, cached, curEffRaw, titleText, onCommit) {
+  const n = cached.length;
+  const curEff = String(curEffRaw || '').toLowerCase();
+  let curIdx = cached.findIndex((o) => o.label.toLowerCase() === curEff);
+  if (curIdx < 0) curIdx = Math.floor(n / 2);
+  const ratio = n > 1 ? curIdx / (n - 1) : 1;
+
+  const dotsHtml = cached.map((o, i) => {
+    const r = n > 1 ? i / (n - 1) : 0;
+    return '<span class="amp-cx-pill-dot' + (i < curIdx ? ' passed' : '') + '" data-eff-idx="' + i + '" data-eff-lbl="' + escHtml(o.label) + '" style="left:calc(13px + (100% - 26px) * ' + r.toFixed(4) + ')"></span>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="amp-cx-top">' +
+      '<button type="button" class="amp-cx-iconbtn" id="amp-cx-bolt" title="快速切至最低档">' + AMP_BOLT_ICO + '</button>' +
+      '<div class="amp-cx-center">' +
+        '<div class="amp-cx-big" id="amp-cx-big" data-eff-lbl="' + escHtml(cached[curIdx].label) + '">' + escHtml(displayEffortWord(cached[curIdx].label)) + '</div>' +
+        '<div class="amp-cx-model">' + escHtml(titleText) + '</div>' +
+      '</div>' +
+      '<button type="button" class="amp-cx-iconbtn" id="amp-cx-reset" title="重置为均衡档">' + AMP_RESET_ICO + '</button>' +
+    '</div>' +
+    '<div class="amp-cx-pill-track" id="amp-cx-track" style="--amp-r:' + ratio.toFixed(4) + '">' +
+      '<div class="amp-cx-pill-fill"></div>' +
+      dotsHtml +
+      '<div class="amp-cx-pill-thumb"></div>' +
+    '</div>';
+
+  const track = container.querySelector('#amp-cx-track');
+  const bigEl = container.querySelector('#amp-cx-big');
+  const dots = Array.from(container.querySelectorAll('.amp-cx-pill-dot'));
+  let sliding = false;
+  let lastIdx = curIdx;
+  let cachedRect = null;
+  let rafId = 0;
+  let pendingR = ratio;
+  let pendingIdx = curIdx;
+
+  function ratioFromX(clientX) {
+    const rc = cachedRect || track.getBoundingClientRect();
+    const usable = Math.max(1, rc.width - 26);
+    return Math.max(0, Math.min(1, (clientX - rc.left - 13) / usable));
+  }
+  function paintTrack(r, idx, forceText) {
+    track.style.setProperty('--amp-r', r.toFixed(4));
+    if (forceText || idx !== lastIdx) {
+      dots.forEach((d, i) => d.classList.toggle('passed', i < idx));
+      if (bigEl && cached[idx]) {
+        bigEl.textContent = displayEffortWord(cached[idx].label);
+        bigEl.setAttribute('data-eff-lbl', cached[idx].label);
+      }
+    }
+  }
+  function commitIdx(idx) {
+    if (rafId) {
+      window.cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+    const snapR = n > 1 ? idx / (n - 1) : 1;
+    paintTrack(snapR, idx, true);
+    lastIdx = idx;
+    const chosen = cached[idx];
+    if (chosen) {
+      playDialTick();
+      onCommit(chosen.label);
+    }
+  }
+
+  track.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    sliding = true;
+    cachedRect = track.getBoundingClientRect();
+    track.classList.add('dragging');
+    try { track.setPointerCapture(e.pointerId); } catch (_) {}
+    const r = ratioFromX(e.clientX);
+    const idx = Math.round(r * (n - 1));
+    paintTrack(r, idx, true);
+    lastIdx = idx;
+  });
+  track.addEventListener('pointermove', (e) => {
+    if (!sliding) return;
+    pendingR = ratioFromX(e.clientX);
+    pendingIdx = Math.round(pendingR * (n - 1));
+    if (!rafId) {
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        if (!sliding) return;
+        const changed = pendingIdx !== lastIdx;
+        paintTrack(pendingR, pendingIdx, changed);
+        if (changed) {
+          lastIdx = pendingIdx;
+          playDialTick();
+        }
+      });
+    }
+  });
+  track.addEventListener('pointerup', (e) => {
+    if (!sliding) return;
+    sliding = false;
+    track.classList.remove('dragging');
+    try { track.releasePointerCapture(e.pointerId); } catch (_) {}
+    const idx = Math.round(ratioFromX(e.clientX) * (n - 1));
+    cachedRect = null;
+    commitIdx(idx);
+  });
+
+  const boltBtn = container.querySelector('#amp-cx-bolt');
+  if (boltBtn) {
+    boltBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      commitIdx(0);
+    });
+  }
+  const resetBtn = container.querySelector('#amp-cx-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const medIdx = cached.findIndex((o) => /^Medium$/i.test(o.label));
+      commitIdx(medIdx >= 0 ? medIdx : Math.floor(n / 2));
+    });
+  }
+}
+
 function renderEffortArea(pop, focused) {
   const box = pop.querySelector('.amp-effort-box');
   if (!box) return;
@@ -3141,7 +3457,13 @@ function renderEffortArea(pop, focused) {
 
   const allEffort = focused.family !== 'orch' && cached.every((o) => o.isEffort);
   if (!allEffort) {
-    const curSub = (focused.subLabel || '').toLowerCase();
+    // 3-level Orchestrator support: Sub-Model vertical selector + linked Codex Thinking Effort Pill Slider!
+    const curParsed = splitModelAndEffort(focused.subLabel || '');
+    const curSubBase = (mpState.orchSubBase || curParsed.base || splitModelAndEffort(cached[0].label).base).trim();
+    const curSubEffort = (curSubBase.toLowerCase() === curParsed.base.toLowerCase() && curParsed.effort)
+      ? curParsed.effort
+      : (splitModelAndEffort((cached.find((o) => splitModelAndEffort(o.label).base.toLowerCase() === curSubBase.toLowerCase()) || cached[0]).label).effort || 'Medium');
+
     box.innerHTML =
       '<div class="amp-cx-top" style="margin-bottom:6px">' +
         '<span></span>' +
@@ -3150,120 +3472,66 @@ function renderEffortArea(pop, focused) {
       '</div>' +
       '<div class="amp-sub-pills">' +
         cached.map((o) => {
-          const isCur = o.label.toLowerCase() === curSub;
-          return '<button type="button" class="amp-sub-pill' + (isCur ? ' active' : '') + '" data-sub-lbl="' + escHtml(o.label) + '"><span>' + escHtml(o.label) + '</span><span>' + (isCur ? '✓' : '') + '</span></button>';
+          const sp = splitModelAndEffort(o.label);
+          const isCur = sp.base.toLowerCase() === curSubBase.toLowerCase();
+          const showEff = isCur ? curSubEffort : sp.effort;
+          return '<button type="button" class="amp-sub-pill' + (isCur ? ' active' : '') + '" data-sub-lbl="' + escHtml(o.label) + '" data-sub-base="' + escHtml(sp.base) + '"><span>' + escHtml(sp.base) + '</span><span style="opacity:0.78;font-size:11px">' + escHtml(showEff) + (isCur ? ' ✓' : '') + '</span></button>';
         }).join('') +
-      '</div>';
+      '</div>' +
+      '<div id="amp-orch-effort-slot" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gs-line,rgba(128,128,128,0.16))"></div>';
+
     box.querySelectorAll('.amp-sub-pill').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        const subBase = btn.getAttribute('data-sub-base') || '';
+        const rawLbl = btn.getAttribute('data-sub-lbl') || '';
+        mpState.orchSubBase = subBase;
         playDialTick();
-        void triggerSubOptionSelection(focused.baseName, btn.getAttribute('data-sub-lbl'));
+        void triggerSubOptionSelection(focused.baseName, rawLbl).then(() => {
+          const k = focused.baseName + '::' + subBase;
+          if (!mpState.effortCache[k]) {
+            window.setTimeout(() => {
+              if (mpState.open && mpState.focusedName.toLowerCase() === focused.baseName.toLowerCase()) {
+                void probeOrchSubEffortLive(focused.baseName, subBase);
+              }
+            }, 120);
+          }
+        });
       });
     });
+
+    const slot = box.querySelector('#amp-orch-effort-slot');
+    const sub3Key = focused.baseName + '::' + curSubBase;
+    const sub3Cached = mpState.effortCache[sub3Key] || mpState.effortCache[curSubBase];
+    if (sub3Cached && sub3Cached.length >= 2) {
+      mountCodexEffortSlider(slot, sub3Cached, curSubEffort, curSubBase, (chosenEffort) => {
+        mpState.orchSubBase = curSubBase;
+        void triggerOrchSubEffortSelection(focused.baseName, curSubBase, chosenEffort);
+      });
+      if (!mpState.effortCache[sub3Key]) {
+        void probeOrchSubEffortLive(focused.baseName, curSubBase);
+      }
+    } else {
+      slot.innerHTML =
+        '<div class="amp-cx-top">' +
+          '<span></span>' +
+          '<div class="amp-cx-center">' +
+            '<div class="amp-cx-big">' + escHtml(displayEffortWord(curSubEffort || '…')) + '</div>' +
+            '<div class="amp-cx-model">' + escHtml(curSubBase) + ' · 加载档位中</div>' +
+          '</div>' +
+          '<span></span>' +
+        '</div>' +
+        '<div class="amp-cx-pill-track" style="--amp-r:0.5;opacity:0.45"><div class="amp-cx-pill-fill"></div><div class="amp-cx-pill-thumb"></div></div>';
+      void probeOrchSubEffortLive(focused.baseName, curSubBase);
+    }
     return;
   }
 
-  // Codex 1:1 pill-track slider preserving ALL real levels (Low / Med / High / XHigh / Ex High ...)
-  const n = cached.length;
-  const curEff = (focused.effortLabel || '').toLowerCase();
-  let curIdx = cached.findIndex((o) => o.label.toLowerCase() === curEff);
-  if (curIdx < 0) curIdx = Math.floor(n / 2);
-  const ratio = n > 1 ? curIdx / (n - 1) : 1;
-
-  const dotsHtml = cached.map((o, i) => {
-    const r = n > 1 ? i / (n - 1) : 0;
-    return '<span class="amp-cx-pill-dot' + (i < curIdx ? ' passed' : '') + '" data-eff-idx="' + i + '" data-eff-lbl="' + escHtml(o.label) + '" style="left:calc(13px + (100% - 26px) * ' + r.toFixed(4) + ')"></span>';
-  }).join('');
-
-  box.innerHTML =
-    '<div class="amp-cx-top">' +
-      '<button type="button" class="amp-cx-iconbtn" id="amp-cx-bolt" title="快速切至最低档">' + AMP_BOLT_ICO + '</button>' +
-      '<div class="amp-cx-center">' +
-        '<div class="amp-cx-big" id="amp-cx-big" data-eff-lbl="' + escHtml(cached[curIdx].label) + '">' + escHtml(displayEffortWord(cached[curIdx].label)) + '</div>' +
-        '<div class="amp-cx-model">' + escHtml(focused.baseName) + '</div>' +
-      '</div>' +
-      '<button type="button" class="amp-cx-iconbtn" id="amp-cx-reset" title="重置为均衡档">' + AMP_RESET_ICO + '</button>' +
-    '</div>' +
-    '<div class="amp-cx-pill-track" id="amp-cx-track" style="--amp-r:' + ratio.toFixed(4) + '">' +
-      '<div class="amp-cx-pill-fill"></div>' +
-      dotsHtml +
-      '<div class="amp-cx-pill-thumb"></div>' +
-    '</div>';
-
-  const track = box.querySelector('#amp-cx-track');
-  const bigEl = box.querySelector('#amp-cx-big');
-  const dots = Array.from(box.querySelectorAll('.amp-cx-pill-dot'));
-  let sliding = false;
-  let lastIdx = curIdx;
-
-  function ratioFromX(clientX) {
-    const rc = track.getBoundingClientRect();
-    const usable = Math.max(1, rc.width - 26);
-    return Math.max(0, Math.min(1, (clientX - rc.left - 13) / usable));
-  }
-  function paintTrack(r, idx) {
-    track.style.setProperty('--amp-r', r.toFixed(4));
-    dots.forEach((d, i) => d.classList.toggle('passed', i < idx));
-    if (bigEl && cached[idx]) {
-      bigEl.textContent = displayEffortWord(cached[idx].label);
-      bigEl.setAttribute('data-eff-lbl', cached[idx].label);
+  mountCodexEffortSlider(box, cached, focused.effortLabel, focused.baseName, (chosenEffort) => {
+    if (chosenEffort.toLowerCase() !== (focused.effortLabel || '').toLowerCase()) {
+      void triggerSubOptionSelection(focused.baseName, chosenEffort);
     }
-  }
-  function commitIdx(idx) {
-    const snapR = n > 1 ? idx / (n - 1) : 1;
-    paintTrack(snapR, idx);
-    const chosen = cached[idx];
-    if (chosen && chosen.label.toLowerCase() !== curEff) {
-      playDialTick();
-      void triggerSubOptionSelection(focused.baseName, chosen.label);
-    }
-  }
-
-  track.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    sliding = true;
-    track.classList.add('dragging');
-    try { track.setPointerCapture(e.pointerId); } catch (_) {}
-    const r = ratioFromX(e.clientX);
-    const idx = Math.round(r * (n - 1));
-    lastIdx = idx;
-    paintTrack(r, idx);
   });
-  track.addEventListener('pointermove', (e) => {
-    if (!sliding) return;
-    const r = ratioFromX(e.clientX);
-    const idx = Math.round(r * (n - 1));
-    if (idx !== lastIdx) {
-      lastIdx = idx;
-      playDialTick();
-    }
-    paintTrack(r, idx);
-  });
-  track.addEventListener('pointerup', (e) => {
-    if (!sliding) return;
-    sliding = false;
-    track.classList.remove('dragging');
-    try { track.releasePointerCapture(e.pointerId); } catch (_) {}
-    const idx = Math.round(ratioFromX(e.clientX) * (n - 1));
-    commitIdx(idx);
-  });
-
-  const boltBtn = box.querySelector('#amp-cx-bolt');
-  if (boltBtn) {
-    boltBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      commitIdx(0);
-    });
-  }
-  const resetBtn = box.querySelector('#amp-cx-reset');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const medIdx = cached.findIndex((o) => /^Medium$/i.test(o.label));
-      commitIdx(medIdx >= 0 ? medIdx : Math.floor(n / 2));
-    });
-  }
 }
 
 function renderModelPickerBody() {
@@ -3807,6 +4075,9 @@ function ensureObserver() {
   syncBrowserHoleAttr();
   const initComposer = document.querySelector('.surface-composer');
   if (initComposer) bindComposerResizeObserver(initComposer);
+  if (!window.__AGY_BUSY_HEARTBEAT__) {
+    window.__AGY_BUSY_HEARTBEAT__ = window.setInterval(syncHakimiState, 1500);
+  }
 }
 
 window.__AGY_THEME__ = {
