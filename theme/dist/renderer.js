@@ -1333,24 +1333,45 @@ html[data-agy-dark="1"] .amp-cx-pill-track {
 
 .amp-sub-pills {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 186px;
+  overflow-y: auto;
 }
 .amp-sub-pill {
-  border: 1px solid var(--gs-line, #dde5f0);
-  background: var(--gs-bg-2, #f7f9fc);
-  color: var(--gs-ink-2, #525d6d);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gs-ink, #1b1f24);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
   cursor: pointer;
+  text-align: left;
+}
+.amp-sub-pill:hover {
+  background: var(--gs-side-hover, rgba(26, 115, 232, 0.08));
 }
 .amp-sub-pill.active {
-  background: var(--gs-accent, #1a73e8);
-  border-color: var(--gs-accent, #1a73e8);
-  color: #ffffff;
+  background: var(--gs-row-selected, rgba(26, 115, 232, 0.14));
+  border-color: var(--gs-row-selected-border, rgba(26, 115, 232, 0.28));
+  color: var(--gs-accent-strong, #124eb3);
+  font-weight: 600;
+}
+body.theme-dark .amp-sub-pill,
+html.dark .amp-sub-pill,
+html[data-agy-dark="1"] .amp-sub-pill {
+  color: #e6edf3;
+}
+body.theme-dark .amp-sub-pill.active,
+html.dark .amp-sub-pill.active,
+html[data-agy-dark="1"] .amp-sub-pill.active {
+  color: #93c5fd;
 }
 `;
 
@@ -1387,7 +1408,7 @@ function isBusy() {
 
 function detectWorkActivity(force) {
   const now = Date.now();
-  if (!force && now - lastWorkDetectAt < 800) {
+  if (!force && now - lastWorkDetectAt < 1400) {
     return lastWorkAct;
   }
   lastWorkDetectAt = now;
@@ -2479,6 +2500,31 @@ const MODEL_NAME_RX = /\b(Gemini|Claude|GPT|Orchestrator|Opus|Sonnet|Flash|Neon|
 const EFFORT_TAIL_RX = /^(.*?)\s+(Minimal|Low|Medium|High|X-?High|Ex\s*High|Extra\s*High|Max)\s*$/i;
 const EFFORT_WORD_RX = /^(Minimal|Low|Medium|High|X-?High|Ex\s*High|Extra\s*High|Max)$/i;
 
+const MP_EFFORT_STORE = 'agy-mp-effort-cache:v2';
+
+function loadPersistedEffortCache() {
+  const out = Object.create(null);
+  try {
+    const raw = localStorage.getItem(MP_EFFORT_STORE);
+    if (!raw) return out;
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') {
+      Object.keys(obj).forEach((k) => {
+        if (Array.isArray(obj[k]) && obj[k].length >= 2) {
+          out[k] = obj[k];
+        }
+      });
+    }
+  } catch (_) {}
+  return out;
+}
+
+function savePersistedEffortCache(cache) {
+  try {
+    localStorage.setItem(MP_EFFORT_STORE, JSON.stringify(cache));
+  } catch (_) {}
+}
+
 let mpState = {
   open: false,
   tab: 'gemini',
@@ -2489,7 +2535,7 @@ let mpState = {
   rawBypassUntil: 0,
   busySwitching: false,
   probingModel: '',
-  effortCache: Object.create(null), // { [baseName]: [{ label, short, isEffort }] }
+  effortCache: loadPersistedEffortCache(), // { [baseName]: [{ label, short, isEffort }] }
   captureTimer: 0,
   captureObs: null,
   knownNodes: null,
@@ -2754,11 +2800,13 @@ function waitMs(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function findVisibleSubmenuOptions(mainRootEl) {
+function findVisibleSubmenuOptions(mainRootEl, isOrch) {
   // Search ALL compact floating containers (including siblings/descendants inside the same portal, ONLY excluding mainRootEl itself!)
   const pools = document.querySelectorAll(
     '[role="menu"], [data-radix-menu-content], [role="listbox"], [data-radix-popper-content-wrapper], [data-floating-ui-portal] > div, body > div'
   );
+  const maxW = isOrch ? 480 : 380;
+  const maxH = isOrch ? 580 : 460;
   for (let i = pools.length - 1; i >= 0; i--) {
     const p = pools[i];
     if (!p || p === mainRootEl || p.id === 'agy-model-picker' || p.closest('#agy-model-picker')) continue;
@@ -2767,21 +2815,21 @@ function findVisibleSubmenuOptions(mainRootEl) {
     if (mainRootEl && p.contains(mainRootEl)) continue;
 
     const rc = p.getBoundingClientRect();
-    if (rc.width < 50 || rc.width > 380 || rc.height < 40 || rc.height > 460) continue;
+    if (rc.width < 50 || rc.width > maxW || rc.height < 40 || rc.height > maxH) continue;
 
     const rawTxt = getSpacedText(p);
-    if (!rawTxt || rawTxt.length > 600) continue;
+    if (!rawTxt || rawTxt.length > (isOrch ? 1800 : 600)) continue;
     if (/模型选择|查看用量统计|View\s*Usage/i.test(rawTxt)) continue;
 
-    const looksEffort = /Thinking\s*effort|思考强度/i.test(rawTxt) || (/\bLow\b/i.test(rawTxt) && /\bHigh\b/i.test(rawTxt));
+    const looksEffort = !isOrch && (/Thinking\s*effort|思考强度/i.test(rawTxt) || (/\bLow\b/i.test(rawTxt) && /\bHigh\b/i.test(rawTxt)));
     let candEls = Array.from(p.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="option"], button'));
     if (candEls.length < 2) {
       candEls = Array.from(p.querySelectorAll('div, li')).filter((d) => {
-        if (d.children.length > 3) return false;
+        if (d.children.length > 4) return false;
         const t = getSpacedText(d).replace(/[✓✔ⓘ>›]/g, '').trim();
-        if (!t || t.length > 48 || /^Thinking\s*effort$|^思考强度$/i.test(t)) return false;
+        if (!t || t.length > (isOrch ? 80 : 48) || /^Thinking\s*effort$|^思考强度$/i.test(t)) return false;
         const dr = d.getBoundingClientRect();
-        return dr.height >= 18 && dr.height <= 54 && (EFFORT_WORD_RX.test(t) || MODEL_NAME_RX.test(t));
+        return dr.height >= 18 && dr.height <= 64 && (isOrch || EFFORT_WORD_RX.test(t) || MODEL_NAME_RX.test(t));
       });
     }
 
@@ -2789,11 +2837,15 @@ function findVisibleSubmenuOptions(mainRootEl) {
     const seen = new Set();
     for (let j = 0; j < candEls.length; j++) {
       const el = candEls[j];
-      const lbl = getSpacedText(el).replace(/[✓✔ⓘ>›]/g, '').trim();
-      if (!lbl || lbl.length > 48 || /^Thinking\s*effort$|^思考强度$/i.test(lbl)) continue;
+      const parts = collectLeafTexts(el).filter(
+        (pt) => !/^[✓✔>›ⓘ•·]$/.test(pt) && !/^(New|Leaving\s*Soon|即将下线|即将停用|Notice|Hint|提示)$/i.test(pt)
+      );
+      const lbl = parts.join(' ').replace(/\s+/g, ' ').trim();
+      if (!lbl || lbl.length > (isOrch ? 80 : 48) || /^Thinking\s*effort$|^思考强度$/i.test(lbl)) continue;
       const isEff = EFFORT_WORD_RX.test(lbl);
       const isMod = MODEL_NAME_RX.test(lbl);
-      if (!isEff && !isMod) continue;
+      // For Orchestrator submenus, keep ALL native menu items (even custom/auto/fast names)
+      if (!isOrch && !isEff && !isMod) continue;
       const k = lbl.toLowerCase();
       if (seen.has(k)) continue;
       seen.add(k);
@@ -2801,12 +2853,12 @@ function findVisibleSubmenuOptions(mainRootEl) {
         label: lbl,
         short: shortEffortLabel(lbl),
         el,
-        isEffort: isEff,
+        isEffort: isOrch ? false : isEff,
       });
     }
-    if (opts.length >= 2 && (looksEffort || opts.every((o) => o.isEffort || MODEL_NAME_RX.test(o.label)))) {
+    if (opts.length >= 2 && (isOrch || looksEffort || opts.every((o) => o.isEffort || MODEL_NAME_RX.test(o.label)))) {
       markStealth(p);
-      return { root: p, opts, isEffort: opts.every((o) => o.isEffort) || looksEffort };
+      return { root: p, opts, isEffort: isOrch ? false : (opts.every((o) => o.isEffort) || looksEffort) };
     }
   }
   return null;
@@ -2842,6 +2894,7 @@ async function openSubmenuForModel(mainRoot, modelBaseName) {
   const parsed = parseNativeModelMenu(mainRoot, '');
   const row = parsed.items.find((x) => x.baseName.toLowerCase() === modelBaseName.toLowerCase());
   if (!row || !row.el) return null;
+  const isOrch = row.family === 'orch' || /^Orchestrator\b/i.test(modelBaseName);
 
   // Prefer explicit Radix SubTrigger element if nested or ancestor
   const trigEl =
@@ -2873,7 +2926,7 @@ async function openSubmenuForModel(mainRoot, modelBaseName) {
       trigEl.dispatchEvent(new PointerEvent('pointermove', Object.assign({}, pOpts, { clientX: cx + 2 })));
       trigEl.dispatchEvent(new MouseEvent('mousemove', Object.assign({}, mOpts, { clientX: cx + 2 })));
     }
-    sub = findVisibleSubmenuOptions(mainRoot);
+    sub = findVisibleSubmenuOptions(mainRoot, isOrch);
     if (sub) break;
     if (i === 5) {
       trigEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', code: 'ArrowRight', bubbles: true, cancelable: true }));
@@ -2900,6 +2953,7 @@ async function probeModelOptionsLive(modelBaseName) {
         short: o.short,
         isEffort: o.isEffort,
       }));
+      savePersistedEffortCache(mpState.effortCache);
       if (mpState.open && mpState.focusedName.toLowerCase() === modelBaseName.toLowerCase()) {
         renderModelPickerBody();
       }
@@ -2922,6 +2976,7 @@ async function triggerSubOptionSelection(modelBaseName, targetLabel) {
       short: o.short,
       isEffort: o.isEffort,
     }));
+    savePersistedEffortCache(mpState.effortCache);
     const match = sub.opts.find((o) => o.label.toLowerCase() === targetLabel.toLowerCase());
     if (match && match.el) {
       dispatchRadixClick(match.el);
@@ -2943,6 +2998,15 @@ async function triggerSubOptionSelection(modelBaseName, targetLabel) {
 
 async function triggerModelSelection(item) {
   if (mpState.busySwitching) return;
+  // Clicking Orchestrator focuses it and opens its sub-model picker list cleanly without closing early
+  if (item.family === 'orch') {
+    mpState.focusedName = item.baseName;
+    renderModelPickerBody();
+    if (!mpState.effortCache[item.baseName] || mpState.effortCache[item.baseName].length < 2) {
+      void probeModelOptionsLive(item.baseName);
+    }
+    return;
+  }
   mpState.busySwitching = true;
   mpState.suppressAutoProbe = true;
   try {
@@ -3075,19 +3139,20 @@ function renderEffortArea(pop, focused) {
     return;
   }
 
-  const allEffort = cached.every((o) => o.isEffort);
+  const allEffort = focused.family !== 'orch' && cached.every((o) => o.isEffort);
   if (!allEffort) {
     const curSub = (focused.subLabel || '').toLowerCase();
     box.innerHTML =
-      '<div class="amp-cx-top" style="margin-bottom:8px">' +
+      '<div class="amp-cx-top" style="margin-bottom:6px">' +
         '<span></span>' +
-        '<div class="amp-cx-center"><div class="amp-cx-model" style="margin-top:0">' + escHtml(focused.baseName) + '</div></div>' +
+        '<div class="amp-cx-center"><div class="amp-cx-model" style="margin-top:0">' + escHtml(focused.baseName) + ' 子模型</div></div>' +
         '<span></span>' +
       '</div>' +
       '<div class="amp-sub-pills">' +
-        cached.map((o) =>
-          '<button type="button" class="amp-sub-pill' + (o.label.toLowerCase() === curSub ? ' active' : '') + '" data-sub-lbl="' + escHtml(o.label) + '">' + escHtml(o.label) + '</button>'
-        ).join('') +
+        cached.map((o) => {
+          const isCur = o.label.toLowerCase() === curSub;
+          return '<button type="button" class="amp-sub-pill' + (isCur ? ' active' : '') + '" data-sub-lbl="' + escHtml(o.label) + '"><span>' + escHtml(o.label) + '</span><span>' + (isCur ? '✓' : '') + '</span></button>';
+        }).join('') +
       '</div>';
     box.querySelectorAll('.amp-sub-pill').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -3626,26 +3691,73 @@ function bindLocalFileContextMenu() {
 
 // ==================== Part 5: Observer & Public API ====================
 
+let observedComposerEl = null;
+
+function syncBrowserHoleAttr() {
+  const hole = document.querySelector('[data-browser-hole]:not([data-browser-hole="false"])');
+  const root = document.documentElement;
+  if (hole) {
+    if (root.getAttribute('data-agy-browser-hole') !== '1') {
+      root.setAttribute('data-agy-browser-hole', '1');
+    }
+    const holeMain = hole.closest('main');
+    const mains = document.querySelectorAll('main');
+    for (let i = 0; i < mains.length; i++) {
+      const m = mains[i];
+      if (m === holeMain) {
+        if (m.getAttribute('data-agy-has-hole') !== '1') m.setAttribute('data-agy-has-hole', '1');
+      } else if (m.hasAttribute('data-agy-has-hole')) {
+        m.removeAttribute('data-agy-has-hole');
+      }
+    }
+  } else if (root.hasAttribute('data-agy-browser-hole')) {
+    root.removeAttribute('data-agy-browser-hole');
+    document.querySelectorAll('main[data-agy-has-hole]').forEach((m) => m.removeAttribute('data-agy-has-hole'));
+  }
+}
+
+function bindComposerResizeObserver(composer) {
+  if (!composer || composer === observedComposerEl) return;
+  observedComposerEl = composer;
+  if (composerResizeObs) {
+    try { composerResizeObs.disconnect(); } catch (_) {}
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    composerResizeObs = new ResizeObserver(() => {
+      layoutMuseStage();
+    });
+    composerResizeObs.observe(composer);
+  }
+  layoutMuseStage();
+}
+
 function ensureObserver() {
   if (window.__AGY_I18N_OBS__) return;
   window.__AGY_I18N_OBS__ = true;
 
-  // Coalesce host updates with a 180ms throttle instead of every animation frame during streaming
+  // Coalesce host updates with a 220ms throttle; avoid forced reflow on streaming text
   let refreshTimer = 0;
   function refreshFromHost() {
     refreshTimer = 0;
     syncDarkAttr();
+    syncBrowserHoleAttr();
     syncPulseDrawerSurface();
     syncHakimiState();
-    const needsRing = !document.getElementById('agy-codex-ctx-btn') && !!document.querySelector('.surface-composer');
+    const composer = document.querySelector('.surface-composer');
+    const needsRing = !document.getElementById('agy-codex-ctx-btn') && !!composer;
     const needsTheme = !document.getElementById('agy-inline-theme-btn') && !!document.querySelector('[data-testid="title-menu-bar"]');
     if (needsRing || needsTheme) mountCodexRingAndTopTheme();
-    else enhanceModelTriggerButton();
-    layoutMuseStage();
+    else if (composer) enhanceModelTriggerButton(composer);
+    if (composer) {
+      if (composer !== observedComposerEl) bindComposerResizeObserver(composer);
+    } else {
+      observedComposerEl = null;
+      layoutMuseStage();
+    }
   }
   function scheduleRefresh() {
     if (!refreshTimer) {
-      refreshTimer = window.setTimeout(refreshFromHost, 180);
+      refreshTimer = window.setTimeout(refreshFromHost, 220);
     }
   }
 
@@ -3661,17 +3773,24 @@ function ensureObserver() {
   }
 
   const ownControls = '#hakimi-muse-stage, #hakimi-say, #agy-inline-theme-btn, #agy-theme-dial-pop, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-file-ctx-menu, #agy-model-picker';
+  const streamSkipSel = '.markdown-body, pre, code, [data-testid="planner-response-text"], .monaco-editor, .cm-content';
   const observer = new MutationObserver((mutations) => {
     let hostChanged = false;
     for (let i = 0; i < mutations.length; i++) {
       const m = mutations[i];
       const el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
-      if (el && el.closest(ownControls)) continue;
-      hostChanged = true;
+      if (!el || el.closest(ownControls)) continue;
       if (m.type === 'characterData') {
+        // Never waste CPU scanning streaming markdown/code text chunks
+        if (el.closest(streamSkipSel)) continue;
+        hostChanged = true;
         translateNode(m.target);
-      } else if (m.addedNodes && m.addedNodes.length) {
-        for (let j = 0; j < m.addedNodes.length; j++) translateNode(m.addedNodes[j]);
+      } else {
+        hostChanged = true;
+        if (m.addedNodes && m.addedNodes.length) {
+          if (el.closest(streamSkipSel)) continue;
+          for (let j = 0; j < m.addedNodes.length; j++) translateNode(m.addedNodes[j]);
+        }
       }
     }
     if (hostChanged) scheduleRefresh();
@@ -3683,8 +3802,11 @@ function ensureObserver() {
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ['data-testid', 'aria-label']
+    attributeFilter: ['data-testid', 'aria-label', 'data-browser-hole']
   });
+  syncBrowserHoleAttr();
+  const initComposer = document.querySelector('.surface-composer');
+  if (initComposer) bindComposerResizeObserver(initComposer);
 }
 
 window.__AGY_THEME__ = {

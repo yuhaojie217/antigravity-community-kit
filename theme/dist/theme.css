@@ -454,15 +454,28 @@ html:not([data-agy-theme="off"]) body.theme-dark {
 
 /* ==================== 3. SHARED SKIN SKELETON ==================== */
 html:not([data-agy-theme="off"]) {
-  background-color: var(--gs-bg) !important;
   color: var(--gs-ink) !important;
   -webkit-font-smoothing: antialiased;
 }
 html:not([data-agy-theme="off"]) body {
+  color: var(--gs-ink) !important;
+}
+/* Only paint html/body canvas when no native browser WCV hole is active;
+   otherwise html/body MUST stay transparent so the lower browser WebContentsView
+   shows through [data-browser-hole]. Driven by O(1) data-agy-browser-hole attr (zero :has()). */
+html:not([data-agy-theme="off"]):not([data-agy-browser-hole="1"]) {
+  background-color: var(--gs-bg) !important;
+}
+html:not([data-agy-theme="off"]):not([data-agy-browser-hole="1"]) body {
   background-color: var(--gs-bg) !important;
   background-image: var(--gs-ambient) !important;
   background-repeat: no-repeat !important;
-  color: var(--gs-ink) !important;
+}
+html:not([data-agy-theme="off"])[data-agy-browser-hole="1"],
+html:not([data-agy-theme="off"])[data-agy-browser-hole="1"] body,
+html:not([data-agy-theme="off"]) [data-browser-hole]:not([data-browser-hole="false"]) {
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
 html:not([data-agy-theme="off"]) ::selection {
@@ -565,76 +578,66 @@ div[data-testid="conversation-row-sidebar"] .agy-row-actions {
   background: linear-gradient(to right, transparent 0%, var(--row-bg) 32%) !important;
 }
 
-/* New Conversation Pill with Theme Edge */
+/* New Conversation Pill with Zero-Mask Gradient Border */
 a[data-testid="new-conversation-button"] {
   position: relative !important;
   border-radius: var(--gs-radius) !important;
-  background: var(--gs-side-elev) !important;
-  border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07) !important;
+  background:
+    linear-gradient(var(--gs-side-elev), var(--gs-side-elev)) padding-box,
+    var(--gs-edge-soft) border-box !important;
+  border: var(--gs-edge-w) solid transparent !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
   color: var(--gs-accent) !important;
   font-weight: 600 !important;
   height: 36px !important;
-  transition: transform 0.16s ease, box-shadow 0.2s ease !important;
+  transition: background 0.14s ease, box-shadow 0.16s ease !important;
 }
 a[data-testid="new-conversation-button"]::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: inherit !important;
-  padding: var(--gs-edge-w) !important;
-  background: var(--gs-edge-soft) !important;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
-  -webkit-mask-composite: xor !important;
-  mask-composite: exclude !important;
-  opacity: 1 !important;
-  pointer-events: none !important;
+  display: none !important;
+  content: none !important;
 }
 a[data-testid="new-conversation-button"]:hover {
-  transform: translateY(-0.5px);
-  box-shadow: 0 2px 12px var(--gs-accent-soft) !important;
-}
-a[data-testid="new-conversation-button"]:hover::before {
-  background: var(--gs-edge-focus) !important;
+  background:
+    linear-gradient(var(--gs-side-elev), var(--gs-side-elev)) padding-box,
+    var(--gs-edge-focus) border-box !important;
+  box-shadow: 0 2px 8px var(--gs-accent-soft) !important;
 }
 
-/* Main Surface */
-html:not([data-agy-theme="off"]) main,
-html:not([data-agy-theme="off"]) div[class*="bg-background"]:not([role="dialog"]) {
+/* Main Surface (O(1) attr selectors, zero :has()) */
+html:not([data-agy-theme="off"]):not([data-agy-browser-hole="1"]) main,
+html:not([data-agy-theme="off"]):not([data-agy-browser-hole="1"]) div[class*="bg-background"]:not([role="dialog"]) {
   background-color: transparent !important;
+}
+html:not([data-agy-theme="off"])[data-agy-browser-hole="1"] main:not([data-agy-has-hole="1"]) {
+  background-color: var(--gs-bg) !important;
+  background-image: var(--gs-ambient) !important;
+  background-repeat: no-repeat !important;
 }
 html:not([data-agy-theme="off"]) .md-sticky-message-bleed,
 html:not([data-agy-theme="off"]) div.pointer-events-none.absolute.bottom-0.z-10.w-full:not(.agy-hover-actions) {
   display: none !important;
 }
 
-/* Composer with Theme Edge */
+/* Composer with Zero-Mask Gradient Border (fast under Windows software compositing) */
 .surface-composer {
   position: relative !important;
-  background: var(--gs-side-elev) !important;
-  border: none !important;
+  background:
+    linear-gradient(var(--gs-side-elev), var(--gs-side-elev)) padding-box,
+    var(--gs-edge-soft) border-box !important;
+  border: var(--gs-edge-w) solid transparent !important;
   padding: 0 !important;
   border-radius: var(--gs-radius) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
 }
 .surface-composer::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: inherit !important;
-  padding: var(--gs-edge-w) !important;
-  background: var(--gs-edge-soft) !important;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
-  -webkit-mask-composite: xor !important;
-  mask-composite: exclude !important;
-  pointer-events: none !important;
-  z-index: 2 !important;
+  display: none !important;
+  content: none !important;
 }
 .surface-composer:focus-within {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 6px 22px var(--gs-accent-soft) !important;
-}
-.surface-composer:focus-within::after {
-  background: var(--gs-edge-focus) !important;
+  background:
+    linear-gradient(var(--gs-side-elev), var(--gs-side-elev)) padding-box,
+    var(--gs-edge-focus) border-box !important;
+  box-shadow: 0 3px 14px var(--gs-accent-soft) !important;
 }
 .surface-composer-card {
   background: var(--gs-side-elev) !important;
@@ -723,7 +726,7 @@ html:not([data-agy-theme="off"]) div[class*="dropdown-content"],
 html:not([data-agy-theme="off"]) div[class*="popover-content"] {
   border: 1px solid var(--gs-line) !important;
   border-radius: 12px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.11) !important;
 }
 html:not([data-agy-theme="off"]) [role="menuitem"]:hover,
 html:not([data-agy-theme="off"]) [role="menuitemradio"]:hover,
@@ -738,7 +741,7 @@ html:not([data-agy-theme="off"]) div[class*="tooltip"] {
   color: var(--gs-ink) !important;
   border: 1px solid var(--gs-line) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10) !important;
   z-index: 99999999 !important;
 }
 html:not([data-agy-theme="off"]) [role="tooltip"] *,
@@ -749,7 +752,7 @@ html:not([data-agy-theme="off"]) [role="dialog"],
 html:not([data-agy-theme="off"]) .settings-modal-container {
   border: 1px solid var(--gs-line) !important;
   border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10), 0 32px 80px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16) !important;
   z-index: 99999 !important;
 }
 html:not([data-agy-theme="off"]) .settings-modal-container aside,
