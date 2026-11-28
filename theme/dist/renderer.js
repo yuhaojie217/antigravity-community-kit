@@ -2004,7 +2004,7 @@ function preloadDynamicFrames() {
   if (DYNAMIC_INFLIGHT[inflightKey]) return;
   DYNAMIC_INFLIGHT[inflightKey] = true;
 
-  const bust = '?v=200';
+  const bust = '?v=201';
   for (let i = 0; i < DYNAMIC_ANIM_NAMES.length; i++) {
     const name = DYNAMIC_ANIM_NAMES[i];
     const url = 'http://127.0.0.1:' + port + '/outfits/dynamic/' + name + '.webp' + bust;
