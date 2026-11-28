@@ -693,7 +693,12 @@ html:not([data-agy-theme="off"]) a[href^="http"]:hover { color: var(--gs-accent-
 
 /* Popovers, Menus, Tooltips & Settings Dialog (Opaque in both light & dark modes) */
 html:not([data-agy-theme="off"]) [data-radix-popper-content-wrapper],
-html:not([data-agy-theme="off"]) [role="menu"] {
+html:not([data-agy-theme="off"]) [data-floating-ui-portal],
+html:not([data-agy-theme="off"]) [role="menu"],
+html:not([data-agy-theme="off"]) [role="listbox"],
+html:not([data-agy-theme="off"]) [data-radix-select-content],
+html:not([data-agy-theme="off"]) div[class*="dropdown-content"],
+html:not([data-agy-theme="off"]) div[class*="popover-content"] {
   z-index: 999999 !important;
 }
 html:not([data-agy-theme="off"]) [role="dialog"],
@@ -753,7 +758,6 @@ html:not([data-agy-theme="off"]) .settings-modal-container {
   border: 1px solid var(--gs-line) !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16) !important;
-  z-index: 99999 !important;
 }
 html:not([data-agy-theme="off"]) .settings-modal-container aside,
 html:not([data-agy-theme="off"]) .settings-modal-container div[class*="sidebar"],
@@ -811,6 +815,25 @@ div.agy-hover-actions,
 }
 @media (prefers-reduced-motion: reduce) {
   #hakimi-muse-stage *, #hakimi-say, #agy-theme-dial-pop * { animation: none !important; transition: none !important; }
+}
+
+/* ==================== 5. CONTROL CENTER PREFS: MINIMAL SCOPE & ECO MOTION ==================== */
+html[data-agy-scope="minimal"],
+html[data-agy-scope="minimal"] body,
+html[data-agy-scope="minimal"] main,
+html[data-agy-scope="minimal"] div[role="navigation"].bg-sidebar,
+html[data-agy-scope="minimal"] div[role="navigation"][aria-label="Sidebar"],
+html[data-agy-scope="minimal"] div[role="navigation"] .bg-sidebar {
+  background-color: revert !important;
+  background-image: revert !important;
+  background: revert !important;
+  border-color: revert !important;
+}
+html[data-agy-motion="off"] *,
+html[data-agy-motion="off"] *::before,
+html[data-agy-motion="off"] *::after {
+  transition-duration: 0.001ms !important;
+  animation-duration: 0.001ms !important;
 }
 
 /* 0-frame native model menu stealth in user-origin stylesheet */

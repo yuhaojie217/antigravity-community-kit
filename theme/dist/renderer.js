@@ -6,6 +6,170 @@ const AGY_THEMES = {};
 const THEME_STORE = 'agy-theme-mode:v1';
 const DIAL_SOUND_STORE = 'agy-dial-sound:v1';
 const MUSE_COLLAPSED_STORE = 'agy-hakimi-collapsed:v1';
+const KIT_VERSION = '2.0.0';
+const KIT_REPO = 'yuhaojie217/antigravity-community-kit';
+const KIT_PREFS_STORE = 'agy-kit-prefs:v1';
+const KIT_UPDATE_STORE = 'agy-kit-update-cache:v1';
+
+const KIT_PREFS_DEFAULTS = {
+  scope: 'full',          // 'full' | 'minimal'
+  museMode: 'static',     // 'off' | 'static' (7-frame 4-outfit) | 'dynamic' (24-frame high-fps original Hakimi)
+  i18n: true,             // UI Chinese localization
+  modelPicker: true,      // Codex categorized model picker
+  fileCtx: true,          // Right-click local file actions
+  pulse: true,            // Gemini Pulse ring & side drawer
+  uiMotion: true,         // Light UI transitions
+  dialSound: true,        // Rotary dial & slider mechanical tick
+  autoCheckUpdate: true,  // Silent daily GitHub release check
+};
+
+function readKitPrefs() {
+  const out = Object.assign({}, KIT_PREFS_DEFAULTS);
+  try {
+    const raw = localStorage.getItem(KIT_PREFS_STORE);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        Object.keys(KIT_PREFS_DEFAULTS).forEach((k) => {
+          if (typeof parsed[k] === typeof KIT_PREFS_DEFAULTS[k]) {
+            out[k] = parsed[k];
+          }
+        });
+      }
+    }
+    const oldSound = localStorage.getItem(DIAL_SOUND_STORE);
+    if (oldSound === '0' && !raw) out.dialSound = false;
+  } catch (_) {}
+  return out;
+}
+
+let kitPrefs = readKitPrefs();
+let kitUpdateInfo = (() => {
+  try {
+    const raw = localStorage.getItem(KIT_UPDATE_STORE);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+})();
+
+function compareSemver(a, b) {
+  const pa = String(a || '').replace(/^v/i, '').split(/[-+]/)[0].split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b || '').replace(/^v/i, '').split(/[-+]/)[0].split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+function hasKitUpdateAvailable() {
+  return !!(kitUpdateInfo && kitUpdateInfo.latestTag && compareSemver(kitUpdateInfo.latestTag, KIT_VERSION) > 0);
+}
+
+function syncUpdateBadgeUI() {
+  const btn = document.getElementById('agy-inline-theme-btn');
+  if (btn) btn.classList.toggle('has-update', hasKitUpdateAvailable());
+  const navDot = document.getElementById('agy-cc-upd-dot');
+  if (navDot) navDot.style.display = hasKitUpdateAvailable() ? 'inline-block' : 'none';
+}
+
+async function checkKitUpdate(force) {
+  if (!force && !kitPrefs.autoCheckUpdate) return kitUpdateInfo;
+  const now = Date.now();
+  if (!force && kitUpdateInfo && kitUpdateInfo.checkedAt && now - kitUpdateInfo.checkedAt < 12 * 3600 * 1000) {
+    syncUpdateBadgeUI();
+    return kitUpdateInfo;
+  }
+  try {
+    const res = await fetch('https://api.github.com/repos/' + KIT_REPO + '/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const tag = String(data.tag_name || '').trim();
+    if (tag) {
+      kitUpdateInfo = {
+        checkedAt: now,
+        latestTag: tag,
+        title: String(data.name || tag),
+        url: String(data.html_url || ('https://github.com/' + KIT_REPO + '/releases')),
+        notes: String(data.body || '').slice(0, 600),
+      };
+      try { localStorage.setItem(KIT_UPDATE_STORE, JSON.stringify(kitUpdateInfo)); } catch (_) {}
+      syncUpdateBadgeUI();
+      if (typeof renderControlCenterUpdateTab === 'function') renderControlCenterUpdateTab();
+      return kitUpdateInfo;
+    }
+  } catch (err) {
+    if (force) {
+      kitUpdateInfo = Object.assign({}, kitUpdateInfo || {}, {
+        checkedAt: now,
+        lastError: String(err && err.message || '网络请求失败'),
+      });
+      if (typeof renderControlCenterUpdateTab === 'function') renderControlCenterUpdateTab();
+    }
+  }
+  return kitUpdateInfo;
+}
+
+function saveKitPrefs(patch) {
+  kitPrefs = Object.assign({}, kitPrefs, patch || {});
+  try {
+    localStorage.setItem(KIT_PREFS_STORE, JSON.stringify(kitPrefs));
+    localStorage.setItem(DIAL_SOUND_STORE, kitPrefs.dialSound ? '1' : '0');
+  } catch (_) {}
+  applyKitPrefs();
+  return kitPrefs;
+}
+
+function applyKitPrefs() {
+  const h = document.documentElement;
+  if (kitPrefs.scope === 'minimal') h.setAttribute('data-agy-scope', 'minimal');
+  else h.removeAttribute('data-agy-scope');
+
+  if (!kitPrefs.uiMotion) h.setAttribute('data-agy-motion', 'off');
+  else h.removeAttribute('data-agy-motion');
+
+  if (kitPrefs.museMode === 'dynamic') h.setAttribute('data-agy-muse-dynamic', '1');
+  else h.removeAttribute('data-agy-muse-dynamic');
+
+  if (typeof dialSoundOn !== 'undefined') dialSoundOn = !!kitPrefs.dialSound;
+
+  const museEl = document.getElementById('hakimi-muse-stage');
+  if (museEl) {
+    if (kitPrefs.museMode === 'off') {
+      museEl.style.display = 'none';
+      const sayNode = document.getElementById('hakimi-say');
+      if (sayNode) sayNode.style.display = 'none';
+    } else if (typeof layoutMuseStage === 'function') {
+      lastMuseLayoutKey = '';
+      layoutMuseStage();
+    }
+  }
+  if (kitPrefs.museMode === 'dynamic' && typeof preloadDynamicFrames === 'function') {
+    preloadDynamicFrames();
+  }
+  if (typeof restartMuseAnimLoop === 'function') restartMuseAnimLoop();
+  else if (typeof applyPoseFrame === 'function') applyPoseFrame();
+
+  const ctxBtn = document.getElementById('agy-codex-ctx-btn');
+  if (ctxBtn) {
+    ctxBtn.style.display = kitPrefs.pulse ? '' : 'none';
+  }
+  if (!kitPrefs.pulse && typeof closePulseViews === 'function') {
+    closePulseViews(false);
+  }
+  if (!kitPrefs.modelPicker && typeof closeModelPicker === 'function') {
+    closeModelPicker(false);
+  }
+  if (kitPrefs.i18n && typeof scan === 'function') {
+    scan(document.body);
+  }
+  syncUpdateBadgeUI();
+}
 
 const DIAL_THEMES = [
   { id: 'google',     short: '晨曦',   label: 'Google',  dot: '#3587ff', sliceBg: '#e8f0fe', sliceInk: '#1a73e8', say: 'Google 晨曦风' },
@@ -220,7 +384,7 @@ function translateText(text) {
 const EXCLUDE_SEL =
   '[data-quotable="true"], [data-testid="planner-response-text"], .markdown-body, .prose, [class*="markdown"], [class*="prose"], [contenteditable="true"], textarea, pre, code, ' +
   '.monaco-editor, .cm-content, .hljs, .notranslate, ' +
-  '#hakimi-muse-stage, #hakimi-say, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-model-picker';
+  '#hakimi-muse-stage, #hakimi-say, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-model-picker, #agy-cc-backdrop, #agy-cc-modal';
 
 const ATTRS = ['placeholder', 'data-placeholder', 'aria-placeholder', 'title', 'aria-label'];
 
@@ -230,7 +394,7 @@ function isExcluded(node) {
 }
 
 function translateNode(node) {
-  if (!node) return;
+  if (!node || !kitPrefs.i18n) return;
   try {
     const nt = node.nodeType;
     if (nt === 3) {
@@ -282,7 +446,7 @@ const CUSTOM_UI_CSS = `
 /* --- Muse-Style Top-Center Desk Companion --- */
 #hakimi-muse-stage {
   position: fixed;
-  z-index: 38;
+  z-index: 8;
   pointer-events: none;
   display: flex;
   align-items: flex-end;
@@ -862,13 +1026,14 @@ body.theme-dark .pulse-drawer-head {
   background: transparent;
 }
 
-/* Topbar Theme Switcher Pill */
+/* Topbar Unified Control Center Pill (Apple Style + Update Dot) */
 #agy-inline-theme-btn {
   -webkit-app-region: no-drag;
+  position: relative;
   font-size: 11.5px;
   line-height: 1.2;
   height: 22px;
-  opacity: 0.86;
+  opacity: 0.88;
   white-space: nowrap;
   flex-shrink: 0;
   display: inline-flex;
@@ -877,54 +1042,362 @@ body.theme-dark .pulse-drawer-head {
   margin-left: 6px;
   padding: 0 9px;
   border-radius: 999px;
-  border: 1px solid rgba(128, 128, 128, 0.18);
+  border: 1px solid rgba(128, 128, 128, 0.20);
   background: rgba(128, 128, 128, 0.09);
   color: inherit;
   cursor: pointer;
   user-select: none;
   pointer-events: auto;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: opacity 0.14s ease, background 0.14s ease;
 }
 #agy-inline-theme-btn:hover {
   opacity: 1;
   background: rgba(128, 128, 128, 0.18);
 }
 #agy-inline-theme-btn .agy-tb-dot {
-  width: 6px;
-  height: 6px;
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
 }
-
-/* Compact 208px Tactile Rotary Theme Dial (v1.2.0) */
-#agy-theme-dial-pop {
-  position: fixed;
-  z-index: 9999995;
-  width: 206px;
-  padding: 12px 12px 10px;
-  border-radius: 18px;
-  background: var(--gs-pop-bg, #ffffff);
-  border: 1px solid var(--gs-line, #dde5f0);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.17), 0 3px 10px rgba(15, 23, 42, 0.06);
-  display: none;
-  flex-direction: column;
+#agy-inline-theme-btn .agy-tb-ico {
+  opacity: 0.62;
+  display: inline-flex;
   align-items: center;
-  user-select: none;
+  margin-left: 1px;
+}
+#agy-inline-theme-btn::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 0 1.5px var(--gs-side, #ffffff);
+  display: none;
+}
+#agy-inline-theme-btn.has-update::after {
+  display: block;
+}
+
+/* ===== Apple-Style Unified Control Center (v1.3.0, Zero Blur Jank) ===== */
+#agy-cc-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999994;
+  background: rgba(15, 23, 42, 0.28);
+  display: none;
+  align-items: center;
+  justify-content: center;
   -webkit-app-region: no-drag;
+}
+#agy-cc-backdrop.open { display: flex; }
+#agy-cc-modal {
+  width: 588px;
+  max-width: calc(100vw - 32px);
+  height: 468px;
+  max-height: calc(100vh - 48px);
+  border-radius: 18px;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   animation: codex-pop-in 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-body.theme-dark #agy-theme-dial-pop,
-html.dark #agy-theme-dial-pop {
-  background: var(--gs-pop-bg, #181f29);
-  border-color: var(--gs-line, #2a3342);
-  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.54);
+body.theme-dark #agy-cc-modal,
+html.dark #agy-cc-modal,
+html[data-agy-dark="1"] #agy-cc-modal {
+  background: #1c1c1e;
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.62);
 }
-#agy-theme-dial-pop.open { display: flex; }
+.agy-cc-side {
+  width: 158px;
+  flex-shrink: 0;
+  padding: 16px 10px 14px;
+  background: rgba(0, 0, 0, 0.025);
+  border-right: 1px solid rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+body.theme-dark .agy-cc-side,
+html.dark .agy-cc-side,
+html[data-agy-dark="1"] .agy-cc-side {
+  background: rgba(255, 255, 255, 0.03);
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+.agy-cc-brand {
+  padding: 2px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.agy-cc-brand-t { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; }
+.agy-cc-brand-v { font-size: 10.5px; opacity: 0.55; font-family: ui-monospace, Consolas, monospace; }
+.agy-cc-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7.5px 10px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.agy-cc-nav:hover { background: rgba(128, 128, 128, 0.11); }
+.agy-cc-nav.active {
+  background: var(--gs-accent, #007aff);
+  color: #ffffff;
+  font-weight: 600;
+}
+.agy-cc-nav svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.85; }
+.agy-cc-nav.active svg { opacity: 1; }
+#agy-cc-upd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+  margin-left: auto;
+  display: none;
+}
+.agy-cc-nav.active #agy-cc-upd-dot { background: #ffffff; }
+.agy-cc-side-foot {
+  margin-top: auto;
+  padding: 8px 10px 0;
+  font-size: 10.5px;
+  opacity: 0.48;
+  line-height: 1.4;
+}
+.agy-cc-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.agy-cc-head {
+  height: 46px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+body.theme-dark .agy-cc-head,
+html.dark .agy-cc-head,
+html[data-agy-dark="1"] .agy-cc-head {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+.agy-cc-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.agy-cc-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(128, 128, 128, 0.14);
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.agy-cc-close:hover { background: rgba(128, 128, 128, 0.26); }
+.agy-cc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+}
+.agy-cc-pane { display: none; flex-direction: column; gap: 12px; }
+.agy-cc-pane.active { display: flex; }
+
+/* Apple Inset Grouped Cards */
+.agy-cc-group {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+body.theme-dark .agy-cc-group,
+html.dark .agy-cc-group,
+html[data-agy-dark="1"] .agy-cc-group {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.agy-cc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  min-height: 44px;
+}
+.agy-cc-row + .agy-cc-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+body.theme-dark .agy-cc-row + .agy-cc-row,
+html.dark .agy-cc-row + .agy-cc-row,
+html[data-agy-dark="1"] .agy-cc-row + .agy-cc-row {
+  border-top-color: rgba(255, 255, 255, 0.07);
+}
+.agy-cc-rl { display: flex; flex-direction: column; gap: 1.5px; min-width: 0; }
+.agy-cc-rt { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+.agy-cc-rs { font-size: 11px; opacity: 0.58; line-height: 1.3; }
+
+/* Apple Toggle Switch */
+.agy-cc-sw {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(120, 120, 128, 0.28);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.16s ease;
+}
+.agy-cc-sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.24);
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.agy-cc-sw[aria-checked="true"] {
+  background: #34c759;
+}
+.agy-cc-sw[aria-checked="true"]::after {
+  transform: translateX(16px);
+}
+
+/* Apple Segmented Control */
+.agy-cc-seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 9px;
+  background: rgba(120, 120, 128, 0.14);
+  gap: 2px;
+  flex-shrink: 0;
+}
+.agy-cc-seg.full { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.agy-cc-seg button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: background 0.14s ease, opacity 0.14s ease;
+}
+.agy-cc-seg button.active {
+  background: #ffffff;
+  color: #1d1d1f;
+  opacity: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+body.theme-dark .agy-cc-seg button.active,
+html.dark .agy-cc-seg button.active,
+html[data-agy-dark="1"] .agy-cc-seg button.active {
+  background: #3a3a3c;
+  color: #ffffff;
+}
+
+/* Embedded 6-Slice Rotary Theme Dial inside Appearance Tab */
+.agy-cc-dial-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+}
+.agy-cc-dial-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agy-cc-cur-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.agy-cc-cur-hint { font-size: 11px; opacity: 0.60; line-height: 1.4; }
+.agy-cc-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.agy-cc-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+.agy-cc-swatch.active {
+  border-color: var(--gs-accent, #007aff);
+  transform: scale(1.12);
+}
+.agy-cc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.22);
+  background: rgba(128, 128, 128, 0.08);
+  color: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.agy-cc-btn:hover { background: rgba(128, 128, 128, 0.16); }
+.agy-cc-btn.primary {
+  background: var(--gs-accent, #007aff);
+  border-color: transparent;
+  color: #ffffff;
+}
+.agy-cc-btn.primary:hover { opacity: 0.92; }
+.agy-cc-notes {
+  font-size: 11.5px;
+  line-height: 1.55;
+  opacity: 0.78;
+  white-space: pre-wrap;
+  max-height: 130px;
+  overflow-y: auto;
+  padding: 10px 14px;
+}
+
 .agy-dial-stage {
   position: relative;
-  width: 178px;
-  height: 178px;
+  width: 174px;
+  height: 174px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -948,23 +1421,23 @@ html.dark #agy-theme-dial-pop {
   100% { transform: translateX(-50%) rotate(0deg); }
 }
 #agy-dial-rotor {
-  width: 168px;
-  height: 168px;
+  width: 164px;
+  height: 164px;
   border-radius: 50%;
   cursor: grab;
   position: relative;
-  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 #agy-dial-rotor.dragging { cursor: grabbing; }
-#agy-dial-rotor.snapping { transition: transform 0.30s cubic-bezier(0.22, 1.24, 0.36, 1); }
+#agy-dial-rotor.snapping { transition: transform 0.28s cubic-bezier(0.22, 1.24, 0.36, 1); }
 #agy-dial-hub {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   background: var(--gs-pop-bg, #ffffff);
   border: 2px solid var(--gs-accent, #1a73e8);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -977,36 +1450,97 @@ html.dark #agy-theme-dial-pop {
 #agy-dial-hub:active { transform: scale(0.94); }
 .agy-hub-name { font-size: 11.5px; font-weight: 800; color: var(--gs-ink, #1b1f24); line-height: 1.15; }
 .agy-hub-sub { font-size: 8.5px; color: var(--gs-accent, #1a73e8); font-weight: 700; margin-top: 1px; }
-.agy-dial-foot {
-  width: 100%;
+
+/* ===== Control Center Motion & Polish (Claude x Gemini, transform/opacity only, zero :has()) ===== */
+#agy-cc-backdrop {
+  --cc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cc-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+  --cc-accent: var(--gs-accent, #007aff);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 7px;
-  border-top: 1px solid var(--gs-line-soft, #eef2f7);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 0s linear 200ms;
 }
-body.theme-dark .agy-dial-foot,
-html.dark .agy-dial-foot { border-top-color: #27303d; }
-.agy-dial-mbtn {
-  padding: 2.5px 8px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--gs-ink-3, #64748b);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  transition: all 0.14s ease;
+#agy-cc-backdrop.open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 160ms ease, visibility 0s;
 }
-.agy-dial-mbtn:hover,
-.agy-dial-mbtn.active {
-  background: var(--gs-accent-soft, rgba(26, 115, 232, 0.10));
-  color: var(--gs-accent, #1a73e8);
-  border-color: var(--gs-row-selected-border, rgba(26, 115, 232, 0.30));
+#agy-cc-modal {
+  animation: none;
+  opacity: 0;
+  transform: translateY(8px) scale(0.975);
+  transition: transform 240ms var(--cc-ease), opacity 160ms ease;
+}
+#agy-cc-backdrop.open #agy-cc-modal { opacity: 1; transform: none; }
+
+/* Sidebar sliding indicator */
+.agy-cc-side { position: relative; }
+.agy-cc-nav { position: relative; z-index: 1; transition: background-color 140ms ease, color 160ms ease; }
+.agy-cc-nav.active, .agy-cc-nav.active:hover { background: transparent; }
+.agy-cc-nav svg { transition: transform 200ms var(--cc-spring); }
+.agy-cc-nav:active svg { transform: scale(0.88); }
+.agy-cc-nav-ind {
+  position: absolute; top: 0; left: 10px; right: 10px; height: 34px;
+  border-radius: 9px; background: var(--cc-accent); z-index: 0; pointer-events: none;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cc-accent) 32%, transparent);
+  transition: transform 260ms var(--cc-spring), height 200ms var(--cc-ease), background-color 220ms ease;
+}
+.agy-cc-nav-ind.no-anim { transition: none; }
+
+/* Segmented sliding pill (no measuring: --n buttons, --i active index) */
+.agy-cc-seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.agy-cc-seg.full { display: grid; grid-template-columns: none; }
+.agy-cc-seg button { position: relative; z-index: 1; transition: opacity 140ms ease, color 160ms ease; }
+.agy-cc-seg button.active { background: transparent; box-shadow: none; }
+.agy-cc-seg-ind {
+  position: absolute; top: 2px; bottom: 2px; left: 2px;
+  width: calc((100% - 4px - (var(--n, 2) - 1) * 2px) / var(--n, 2));
+  transform: translateX(calc(var(--i, 0) * (100% + 2px)));
+  border-radius: 7px; background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none; transition: transform 240ms var(--cc-spring), opacity 140ms ease;
+}
+.agy-cc-seg:not(.has-active) .agy-cc-seg-ind { opacity: 0; }
+body.theme-dark .agy-cc-seg-ind, html.dark .agy-cc-seg-ind, html[data-agy-dark="1"] .agy-cc-seg-ind { background: #3a3a3c; }
+
+/* Pane enter */
+.agy-cc-pane.active { animation: agy-cc-pane-in 180ms var(--cc-ease) both; }
+@keyframes agy-cc-pane-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Switch: theme accent + Apple press squish */
+.agy-cc-sw { transition: background-color 180ms ease; }
+.agy-cc-sw[aria-checked="true"] { background: var(--cc-accent); }
+.agy-cc-sw::after { transition: transform 240ms var(--cc-spring), width 140ms var(--cc-ease); }
+.agy-cc-sw:active::after { width: 22px; }
+.agy-cc-sw[aria-checked="true"]:active::after { transform: translateX(12px); }
+
+/* Whole row clickable for switch rows (zero :has()) */
+.agy-cc-row.is-sw { cursor: pointer; transition: background-color 120ms ease; }
+.agy-cc-row.is-sw:hover { background: rgba(128, 128, 128, 0.05); }
+
+/* Press feedback & swatches */
+.agy-cc-btn, .agy-cc-close { transition: transform 120ms var(--cc-ease), background-color 140ms ease, opacity 140ms ease; }
+.agy-cc-btn:active { transform: scale(0.96); }
+.agy-cc-close:hover { transform: rotate(90deg); }
+.agy-cc-close:active { transform: rotate(90deg) scale(0.9); }
+.agy-cc-swatch { transition: transform 220ms var(--cc-spring), border-color 160ms ease, box-shadow 160ms ease; }
+.agy-cc-swatch:hover { transform: scale(1.1); }
+.agy-cc-swatch:active { transform: scale(0.92); }
+.agy-cc-swatch.active {
+  transform: scale(1.16);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14), 0 0 0 2px var(--gs-pop-bg, #ffffff);
+}
+
+/* Keyboard focus */
+#agy-cc-modal :is(button, a):focus-visible { outline: 2px solid var(--cc-accent); outline-offset: 2px; }
+#agy-cc-modal :is(button, a):focus:not(:focus-visible) { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  #agy-cc-backdrop, #agy-cc-backdrop *, #agy-cc-backdrop *::after {
+    animation-duration: 1ms !important; transition-duration: 1ms !important;
+  }
 }
 
 /* --- Codex-Style Minimal Model Trigger & 0-Flicker Categorized Picker (v1.2.3) --- */
@@ -1458,8 +1992,53 @@ function detectWorkActivity(force) {
   return lastWorkAct;
 }
 
+const DYNAMIC_ANIM_NAMES = ['idle', 'think', 'type', 'done'];
+const DYNAMIC_CACHE = Object.create(null); // { idle: url, think: url, type: url, done: url }
+const DYNAMIC_INFLIGHT = Object.create(null);
+let dynTimeout = 0;
+
+function preloadDynamicFrames() {
+  const port = normalizeTelemetryPort(window.__agyTelemetryPort);
+  if (!port) return;
+  const inflightKey = 'dyn-webp@' + port;
+  if (DYNAMIC_INFLIGHT[inflightKey]) return;
+  DYNAMIC_INFLIGHT[inflightKey] = true;
+
+  const bust = '?v=200';
+  for (let i = 0; i < DYNAMIC_ANIM_NAMES.length; i++) {
+    const name = DYNAMIC_ANIM_NAMES[i];
+    const url = 'http://127.0.0.1:' + port + '/outfits/dynamic/' + name + '.webp' + bust;
+    const img = new Image();
+    img.onload = () => {
+      DYNAMIC_CACHE[name] = url;
+      if (kitPrefs.museMode === 'dynamic') applyPoseFrame();
+    };
+    img.onerror = () => {};
+    img.src = url;
+  }
+}
+
 function applyPoseFrame() {
   if (!imgEl || !POSES) return;
+  imgEl.style.transform = '';
+  if (kitPrefs.museMode === 'dynamic') {
+    preloadDynamicFrames();
+    const animName =
+      currentMode === 'laptop' ? 'type' :
+      currentMode === 'write' ? 'think' :
+      currentMode === 'done' ? 'done' : 'idle';
+    const dynSrc = DYNAMIC_CACHE[animName] || '';
+    const fallbackKey =
+      currentMode === 'laptop' ? (animToggle ? 'laptop2' : 'laptop1') :
+      currentMode === 'write' ? (animToggle ? 'write2' : 'write1') :
+      currentMode === 'done' ? 'done' :
+      currentMode === 'sleepy' ? 'sleepy' : 'idle';
+    const src = dynSrc || POSES[fallbackKey] || POSES.idle;
+    if (src && imgEl.src !== src) imgEl.src = src;
+    imgEl.classList.toggle('pose-idle', currentMode === 'idle');
+    return;
+  }
+
   let key = 'idle';
   if (currentMode === 'laptop') {
     key = animToggle ? 'laptop2' : 'laptop1';
@@ -1471,7 +2050,7 @@ function applyPoseFrame() {
     key = 'sleepy';
   }
   const curTheme = window.__agyCurrentTheme || readThemeMode();
-  const themedSrc = OUTFIT_CACHE[curTheme] && OUTFIT_CACHE[curTheme][key];
+  const themedSrc = kitPrefs.museMode === 'static' && OUTFIT_CACHE[curTheme] && OUTFIT_CACHE[curTheme][key];
   const src = themedSrc || POSES[key] || POSES.idle;
   if (src && imgEl.src !== src) {
     imgEl.src = src;
@@ -1479,21 +2058,37 @@ function applyPoseFrame() {
   imgEl.classList.toggle('pose-idle', currentMode === 'idle');
 }
 
+function restartMuseAnimLoop() {
+  window.clearInterval(animTimer);
+  animTimer = 0;
+  window.clearTimeout(dynTimeout);
+  dynTimeout = 0;
+
+  if (kitPrefs.museMode === 'off') return;
+
+  if (kitPrefs.museMode === 'dynamic') {
+    // Native 20~24fps RIFE Animated WebP playback: 0 JS frame-swapping timers!
+    preloadDynamicFrames();
+    applyPoseFrame();
+    return;
+  }
+
+  // Static 7-frame mode (lightweight 2-frame toggle when working)
+  if (currentMode === 'laptop' || currentMode === 'write') {
+    const interval = currentMode === 'laptop' ? 340 : 460;
+    animTimer = window.setInterval(() => {
+      animToggle = !animToggle;
+      applyPoseFrame();
+    }, interval);
+  }
+  applyPoseFrame();
+}
+
 function setMuseMode(nextMode, statusLabel) {
   if (currentMode !== nextMode) {
     currentMode = nextMode;
     animToggle = false;
-    window.clearInterval(animTimer);
-    animTimer = 0;
-
-    if (nextMode === 'laptop' || nextMode === 'write') {
-      const interval = nextMode === 'laptop' ? 340 : 460;
-      animTimer = window.setInterval(() => {
-        animToggle = !animToggle;
-        applyPoseFrame();
-      }, interval);
-    }
-    applyPoseFrame();
+    restartMuseAnimLoop();
   }
 
   if (pillEl && pillTextEl) {
@@ -1558,6 +2153,13 @@ function ensureChatScrollPadding(composer) {
 
 function layoutMuseStage() {
   if (!stageEl) return;
+  if (kitPrefs.museMode === 'off') {
+    if (lastMuseLayoutKey !== 'hidden') {
+      lastMuseLayoutKey = 'hidden';
+      stageEl.style.display = 'none';
+    }
+    return;
+  }
   const composer = document.querySelector('.surface-composer');
   if (!composer) {
     if (lastMuseLayoutKey !== 'hidden') {
@@ -2199,45 +2801,313 @@ function buildDialSvgMarkup() {
 }
 
 function closeThemeDial() {
-  const pop = document.getElementById('agy-theme-dial-pop');
-  if (pop) pop.classList.remove('open');
+  const bd = document.getElementById('agy-cc-backdrop');
+  if (bd) bd.classList.remove('open');
+}
+
+function renderControlCenterUpdateTab() {
+  const box = document.getElementById('agy-cc-upd-card');
+  if (!box) return;
+  const hasUpd = hasKitUpdateAvailable();
+  const checkedStr = kitUpdateInfo && kitUpdateInfo.checkedAt
+    ? new Date(kitUpdateInfo.checkedAt).toLocaleString('zh-CN', { hour12: false })
+    : '尚未检查';
+  const statusLine = hasUpd
+    ? '发现新版本 ' + escHtml(kitUpdateInfo.latestTag) + '（当前 v' + escHtml(KIT_VERSION) + '）'
+    : (kitUpdateInfo && kitUpdateInfo.lastError
+        ? '检查失败：' + escHtml(kitUpdateInfo.lastError)
+        : (kitUpdateInfo && kitUpdateInfo.latestTag
+            ? '已是最新版本（当前 v' + escHtml(KIT_VERSION) + ' · 最新 ' + escHtml(kitUpdateInfo.latestTag) + '）'
+            : '当前版本 v' + escHtml(KIT_VERSION)));
+
+  box.innerHTML =
+    '<div class="agy-cc-row">' +
+      '<div class="agy-cc-rl">' +
+        '<span class="agy-cc-rt">' + statusLine + '</span>' +
+        '<span class="agy-cc-rs">上次检查：' + escHtml(checkedStr) + '</span>' +
+      '</div>' +
+      '<button type="button" class="agy-cc-btn" id="agy-cc-check-btn">立即检查</button>' +
+    '</div>' +
+    (hasUpd
+      ? '<div class="agy-cc-row" style="flex-direction:column;align-items:stretch;gap:8px">' +
+          '<div class="agy-cc-notes" style="padding:0">' + escHtml(kitUpdateInfo.notes || kitUpdateInfo.title || '') + '</div>' +
+          '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+            '<a class="agy-cc-btn primary" href="' + escHtml(kitUpdateInfo.url) + '" target="_blank" rel="noopener" style="text-decoration:none">前往 GitHub 下载新版</a>' +
+          '</div>' +
+        '</div>'
+      : '');
+
+  const chkBtn = box.querySelector('#agy-cc-check-btn');
+  if (chkBtn) {
+    chkBtn.addEventListener('click', async () => {
+      chkBtn.textContent = '检查中…';
+      chkBtn.disabled = true;
+      await checkKitUpdate(true);
+      renderControlCenterUpdateTab();
+    });
+  }
 }
 
 function ensureThemeDialPop() {
-  let pop = document.getElementById('agy-theme-dial-pop');
-  if (pop) return pop;
+  let bd = document.getElementById('agy-cc-backdrop');
+  if (bd) return bd;
   const n = DIAL_THEMES.length;
   const step = 360 / n;
 
-  pop = document.createElement('div');
-  pop.id = 'agy-theme-dial-pop';
-  pop.className = 'notranslate';
-  pop.innerHTML =
-    '<div class="agy-dial-stage" id="agy-dial-stage" title="拖动旋转 / 滚轮拨动 / 点击转一格">' +
-      '<svg class="agy-dial-ptr" id="agy-dial-ptr" width="22" height="20" viewBox="0 0 26 24">' +
-        '<path d="M13 21L3.5 5.5C2.8 4.3 3.7 2.8 5.1 2.8H20.9C22.3 2.8 23.2 4.3 22.5 5.5L13 21Z" fill="var(--gs-accent,#1a73e8)" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>' +
-      '</svg>' +
-      '<div id="agy-dial-rotor"><svg width="168" height="168" viewBox="0 0 228 228">' + buildDialSvgMarkup() + '</svg></div>' +
-      '<button type="button" id="agy-dial-hub" title="点击顺时针转一格">' +
-        '<span class="agy-hub-name" id="agy-hub-name">晨曦</span>' +
-        '<span class="agy-hub-sub">点击转格</span>' +
-      '</button>' +
-    '</div>' +
-    '<div class="agy-dial-foot">' +
-      '<button type="button" class="agy-dial-mbtn' + (dialSoundOn ? ' active' : '') + '" id="agy-dial-mute" title="开关机械微音">' + (dialSoundOn ? '🔊' : '🔇') + '</button>' +
-      '<button type="button" class="agy-dial-mbtn" id="agy-dial-reset" title="恢复 Default 极简原版">↺ 恢复默认</button>' +
-    '</div>';
-  document.body.appendChild(pop);
+  const icoPalette = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>';
+  const icoGrid = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/></svg>';
+  const icoBolt = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+  const icoUpd = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>';
 
-  const rotor = pop.querySelector('#agy-dial-rotor');
-  const ptr = pop.querySelector('#agy-dial-ptr');
-  const hubName = pop.querySelector('#agy-hub-name');
-  const resetBtn = pop.querySelector('#agy-dial-reset');
-  const muteBtn = pop.querySelector('#agy-dial-mute');
+  const swRow = (prefKey, title, sub) =>
+    '<div class="agy-cc-row is-sw">' +
+      '<div class="agy-cc-rl"><span class="agy-cc-rt">' + title + '</span><span class="agy-cc-rs">' + sub + '</span></div>' +
+      '<button type="button" class="agy-cc-sw" role="switch" data-pref="' + prefKey + '" aria-checked="' + (kitPrefs[prefKey] ? 'true' : 'false') + '"></button>' +
+    '</div>';
+
+  bd = document.createElement('div');
+  bd.id = 'agy-cc-backdrop';
+  bd.className = 'notranslate';
+  bd.innerHTML =
+    '<div id="agy-cc-modal" role="dialog" aria-label="Antigravity 主题与套件控制中心">' +
+      '<aside class="agy-cc-side">' +
+        '<div class="agy-cc-brand">' +
+          '<span class="agy-cc-brand-t">主题与套件</span>' +
+          '<span class="agy-cc-brand-v">Community Kit v' + escHtml(KIT_VERSION) + '</span>' +
+        '</div>' +
+        '<button type="button" class="agy-cc-nav active" data-cc-tab="appearance">' + icoPalette + '<span>外观与主题</span></button>' +
+        '<button type="button" class="agy-cc-nav" data-cc-tab="modules">' + icoGrid + '<span>功能模块</span></button>' +
+        '<button type="button" class="agy-cc-nav" data-cc-tab="perf">' + icoBolt + '<span>性能与动效</span></button>' +
+        '<button type="button" class="agy-cc-nav" data-cc-tab="update">' + icoUpd + '<span>更新与关于</span><i id="agy-cc-upd-dot"></i></button>' +
+        '<div class="agy-cc-side-foot">MIT 开源社区套件<br/>所有修改本地即时生效</div>' +
+      '</aside>' +
+      '<section class="agy-cc-main">' +
+        '<header class="agy-cc-head">' +
+          '<span class="agy-cc-title" id="agy-cc-title">外观与主题</span>' +
+          '<button type="button" class="agy-cc-close" id="agy-cc-close" title="关闭（Esc）">✕</button>' +
+        '</header>' +
+        '<div class="agy-cc-body">' +
+          '<!-- Tab 1: Appearance + Embedded Rotary Dial -->' +
+          '<div class="agy-cc-pane active" data-cc-pane="appearance">' +
+            '<div class="agy-cc-group agy-cc-dial-card">' +
+              '<div class="agy-dial-stage" id="agy-dial-stage" title="拖动旋转 / 滚轮拨动 / 点击扇区切换">' +
+                '<svg class="agy-dial-ptr" id="agy-dial-ptr" width="22" height="20" viewBox="0 0 26 24">' +
+                  '<path d="M13 21L3.5 5.5C2.8 4.3 3.7 2.8 5.1 2.8H20.9C22.3 2.8 23.2 4.3 22.5 5.5L13 21Z" fill="var(--gs-accent,#1a73e8)" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>' +
+                '</svg>' +
+                '<div id="agy-dial-rotor"><svg width="164" height="164" viewBox="0 0 228 228">' + buildDialSvgMarkup() + '</svg></div>' +
+                '<button type="button" id="agy-dial-hub" title="点击顺时针转一格">' +
+                  '<span class="agy-hub-name" id="agy-hub-name">晨曦</span>' +
+                  '<span class="agy-hub-sub">点击转格</span>' +
+                '</button>' +
+              '</div>' +
+              '<div class="agy-cc-dial-info">' +
+                '<div class="agy-cc-cur-name" id="agy-cc-cur-name">Google 晨曦风</div>' +
+                '<div class="agy-cc-cur-hint">支持拖动转盘、滚轮拨动或点击下方色点切换 6 套亮暗双模皮肤</div>' +
+                '<div class="agy-cc-swatches">' +
+                  DIAL_THEMES.map((t, i) => '<button type="button" class="agy-cc-swatch" data-swatch-idx="' + i + '" title="' + escHtml(t.say) + '" style="background:' + t.dot + '"></button>').join('') +
+                '</div>' +
+                '<div style="display:flex;gap:8px;margin-top:2px">' +
+                  '<button type="button" class="agy-cc-btn" id="agy-dial-reset">↺ 恢复原生默认</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="agy-cc-group">' +
+              '<div class="agy-cc-row">' +
+                '<div class="agy-cc-rl"><span class="agy-cc-rt">主题作用域</span><span class="agy-cc-rs">轻量模式仅留彩色边框与小人，兼容第三方壁纸插件</span></div>' +
+                '<div class="agy-cc-seg" data-seg="scope">' +
+                  '<button type="button" data-val="full">完整主题</button>' +
+                  '<button type="button" data-val="minimal">仅边框</button>' +
+                '</div>' +
+              '</div>' +
+              swRow('dialSound', '转盘与滑条机械微音', '切换主题或拖动思考档位时的轻柔咔哒声') +
+            '</div>' +
+          '</div>' +
+
+          '<!-- Tab 2: Modules -->' +
+          '<div class="agy-cc-pane" data-cc-pane="modules">' +
+            '<div class="agy-cc-group" style="padding:11px 14px">' +
+              '<div class="agy-cc-rl" style="margin-bottom:9px"><span class="agy-cc-rt">桌边小人模式（氖基米）</span><span class="agy-cc-rs">静态换装含 4 套主题衣橱；动态本尊启用原版 24fps 补帧动画（摇头眨眼 / 托腮思考 / 敲电脑 / Wink 比耶）</span></div>' +
+              '<div class="agy-cc-seg full" data-seg="museMode">' +
+                '<button type="button" data-val="off">无哈基米</button>' +
+                '<button type="button" data-val="static">静态换装</button>' +
+                '<button type="button" data-val="dynamic">动态本尊</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="agy-cc-group">' +
+              swRow('i18n', '全量简体汉化', '仅汉化界面元素，不触碰聊天正文（关闭后刷新恢复英文）') +
+              swRow('modelPicker', 'Codex 分类模型选择器', 'Gemini / 其他模型双分类 + 药丸思考滑条与编排器三级联动') +
+              swRow('fileCtx', '聊天文件右键本地增强', '右键交付文件链接或卡片直达文件夹 / 打开方式') +
+              swRow('pulse', 'Gemini Pulse 额度圆环与看板', '输入框底部 512K 上下文圆环与侧边配额抽屉') +
+            '</div>' +
+          '</div>' +
+
+          '<!-- Tab 3: Performance & Motion -->' +
+          '<div class="agy-cc-pane" data-cc-pane="perf">' +
+            '<div class="agy-cc-group">' +
+              swRow('uiMotion', '界面轻量过渡动画', '关闭后禁用全部 CSS 过渡动画，适合低配核显与无 GPU 加速环境') +
+              '<div class="agy-cc-row">' +
+                '<div class="agy-cc-rl"><span class="agy-cc-rt">一键低配省电</span><span class="agy-cc-rs">关闭界面过渡并将小人切为静态换装，最大限度降低合成负载</span></div>' +
+                '<button type="button" class="agy-cc-btn" id="agy-cc-eco-btn">应用省电</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<!-- Tab 4: Update & About -->' +
+          '<div class="agy-cc-pane" data-cc-pane="update">' +
+            '<div class="agy-cc-group" id="agy-cc-upd-card"></div>' +
+            '<div class="agy-cc-group">' +
+              swRow('autoCheckUpdate', '自动静默检查更新', '每 12 小时静默查询一次 GitHub Release，有新版仅亮小红点') +
+              '<div class="agy-cc-row">' +
+                '<div class="agy-cc-rl"><span class="agy-cc-rt">开源仓库与配置重置</span><span class="agy-cc-rs">github.com/' + escHtml(KIT_REPO) + '</span></div>' +
+                '<div style="display:flex;gap:6px">' +
+                  '<a class="agy-cc-btn" href="https://github.com/' + escHtml(KIT_REPO) + '" target="_blank" rel="noopener" style="text-decoration:none">打开仓库</a>' +
+                  '<button type="button" class="agy-cc-btn" id="agy-cc-reset-all">重置开关</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
+    '</div>';
+  document.body.appendChild(bd);
+
+  const ccSide = bd.querySelector('.agy-cc-side');
+  const navInd = document.createElement('i');
+  navInd.className = 'agy-cc-nav-ind';
+  ccSide.prepend(navInd);
+  function moveNavInd(instant) {
+    const a = ccSide.querySelector('.agy-cc-nav.active');
+    if (!a) return;
+    if (instant) navInd.classList.add('no-anim');
+    navInd.style.height = a.offsetHeight + 'px';
+    navInd.style.transform = 'translateY(' + a.offsetTop + 'px)';
+    if (instant) { void navInd.offsetWidth; navInd.classList.remove('no-anim'); }
+  }
+  bd.__moveNavInd = moveNavInd;
+
+  bd.querySelectorAll('.agy-cc-seg').forEach((seg) => {
+    const ind = document.createElement('i');
+    ind.className = 'agy-cc-seg-ind';
+    seg.prepend(ind);
+    seg.style.setProperty('--n', String(seg.querySelectorAll('button[data-val]').length));
+  });
+
+  bd.querySelectorAll('.agy-cc-row.is-sw').forEach((row) => {
+    const sw = row.querySelector('.agy-cc-sw');
+    if (!sw) return;
+    row.addEventListener('click', (e) => {
+      if (e.target instanceof Element && e.target.closest('button, a')) return;
+      sw.click();
+    });
+  });
+
+  const tabTitles = {
+    appearance: '外观与主题',
+    modules: '功能模块',
+    perf: '性能与动效',
+    update: '更新与关于',
+  };
+
+  function syncControlsUI() {
+    bd.querySelectorAll('.agy-cc-sw[data-pref]').forEach((sw) => {
+      const k = sw.getAttribute('data-pref');
+      sw.setAttribute('aria-checked', kitPrefs[k] ? 'true' : 'false');
+    });
+    bd.querySelectorAll('.agy-cc-seg[data-seg]').forEach((seg) => {
+      const k = seg.getAttribute('data-seg');
+      const btns = Array.from(seg.querySelectorAll('button[data-val]'));
+      let ai = -1;
+      btns.forEach((b, i) => {
+        const on = b.getAttribute('data-val') === kitPrefs[k];
+        b.classList.toggle('active', on);
+        if (on) ai = i;
+      });
+      seg.style.setProperty('--i', String(Math.max(ai, 0)));
+      seg.classList.toggle('has-active', ai >= 0);
+    });
+    syncUpdateBadgeUI();
+  }
+
+  bd.querySelectorAll('.agy-cc-nav').forEach((nav) => {
+    nav.addEventListener('click', () => {
+      const tab = nav.getAttribute('data-cc-tab');
+      bd.querySelectorAll('.agy-cc-nav').forEach((x) => x.classList.toggle('active', x === nav));
+      bd.querySelectorAll('.agy-cc-pane').forEach((p) => p.classList.toggle('active', p.getAttribute('data-cc-pane') === tab));
+      moveNavInd(false);
+      const tEl = bd.querySelector('#agy-cc-title');
+      if (tEl) tEl.textContent = tabTitles[tab] || '控制中心';
+      if (tab === 'update') renderControlCenterUpdateTab();
+    });
+  });
+
+  bd.querySelectorAll('.agy-cc-sw[data-pref]').forEach((sw) => {
+    sw.addEventListener('click', () => {
+      const k = sw.getAttribute('data-pref');
+      const patch = {};
+      patch[k] = !kitPrefs[k];
+      saveKitPrefs(patch);
+      playDialTick();
+      syncControlsUI();
+    });
+  });
+
+  bd.querySelectorAll('.agy-cc-seg[data-seg] button[data-val]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const seg = btn.closest('.agy-cc-seg');
+      const k = seg.getAttribute('data-seg');
+      const v = btn.getAttribute('data-val');
+      const patch = {};
+      patch[k] = v;
+      saveKitPrefs(patch);
+      playDialTick();
+      syncControlsUI();
+    });
+  });
+
+  const ecoBtn = bd.querySelector('#agy-cc-eco-btn');
+  if (ecoBtn) {
+    ecoBtn.addEventListener('click', () => {
+      saveKitPrefs({ uiMotion: false, museMode: kitPrefs.museMode === 'off' ? 'off' : 'static' });
+      playDialTick();
+      syncControlsUI();
+      say('已切换至低配省电配置', 1400);
+    });
+  }
+
+  bd.querySelector('#agy-cc-reset-all').addEventListener('click', () => {
+    saveKitPrefs(KIT_PREFS_DEFAULTS);
+    playDialTick();
+    syncControlsUI();
+    say('已重置全部套件开关为默认配置', 1600);
+  });
+
+  bd.querySelector('#agy-cc-close').addEventListener('click', closeThemeDial);
+  bd.addEventListener('pointerdown', (e) => {
+    if (e.target === bd) closeThemeDial();
+  });
+
+  // Wire Embedded 6-Slice Rotary Theme Dial
+  const rotor = bd.querySelector('#agy-dial-rotor');
+  const ptr = bd.querySelector('#agy-dial-ptr');
+  const hubName = bd.querySelector('#agy-hub-name');
+  const curNameEl = bd.querySelector('#agy-cc-cur-name');
+  const resetBtn = bd.querySelector('#agy-dial-reset');
+  const swatches = Array.from(bd.querySelectorAll('.agy-cc-swatch'));
 
   function idxFromDeg(deg) {
     const norm = ((-deg % 360) + 360) % 360;
     return Math.round(norm / step) % n;
+  }
+
+  function paintDialInfo(idx) {
+    swatches.forEach((s, i) => s.classList.toggle('active', i === idx));
+    if (idx >= 0 && DIAL_THEMES[idx]) {
+      hubName.textContent = DIAL_THEMES[idx].short;
+      if (curNameEl) curNameEl.textContent = DIAL_THEMES[idx].say;
+    } else {
+      hubName.textContent = '原生';
+      if (curNameEl) curNameEl.textContent = '原生极简默认（Default）';
+    }
   }
 
   function setDialAngle(deg, snap, silent) {
@@ -2248,15 +3118,13 @@ function ensureThemeDialPop() {
     if (idx !== dialActiveIdx) {
       dialActiveIdx = idx;
       const item = DIAL_THEMES[idx];
-      hubName.textContent = item.short;
-      resetBtn.classList.remove('active');
+      paintDialInfo(idx);
       if (!silent) {
         playDialTick();
         ptr.classList.remove('tick');
         void ptr.offsetWidth;
         ptr.classList.add('tick');
         applyThemeMode(item.id);
-        if (!isBusy()) say(item.say, 1400);
       }
     }
   }
@@ -2279,15 +3147,21 @@ function ensureThemeDialPop() {
   let moved = 0;
   let startPtrAngle = 0;
   let startRotor = 0;
+  let rotorCenter = null;
 
   function ptrAngle(e) {
-    const r = rotor.getBoundingClientRect();
-    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+    const c = rotorCenter || (() => {
+      const r = rotor.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    })();
+    return Math.atan2(e.clientY - c.y, e.clientX - c.x) * 180 / Math.PI;
   }
 
   rotor.addEventListener('pointerdown', (e) => {
     dragging = true;
     moved = 0;
+    const r = rotor.getBoundingClientRect();
+    rotorCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     rotor.classList.add('dragging');
     rotor.classList.remove('snapping');
     try { rotor.setPointerCapture(e.pointerId); } catch (_) {}
@@ -2305,6 +3179,7 @@ function ensureThemeDialPop() {
   rotor.addEventListener('pointerup', (e) => {
     if (!dragging) return;
     dragging = false;
+    rotorCenter = null;
     rotor.classList.remove('dragging');
     try { rotor.releasePointerCapture(e.pointerId); } catch (_) {}
     if (moved < 5) {
@@ -2314,77 +3189,62 @@ function ensureThemeDialPop() {
     setDialAngle(Math.round(dialAngle / step) * step, true, false);
   });
 
-  pop.querySelector('#agy-dial-stage').addEventListener('wheel', (e) => {
+  bd.querySelector('#agy-dial-stage').addEventListener('wheel', (e) => {
     e.preventDefault();
     stepDial(e.deltaY > 0 ? 1 : -1);
   }, { passive: false });
 
-  pop.querySelector('#agy-dial-hub').addEventListener('click', (e) => {
+  bd.querySelector('#agy-dial-hub').addEventListener('click', (e) => {
     e.stopPropagation();
     stepDial(1);
   });
-  muteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dialSoundOn = !dialSoundOn;
-    try { localStorage.setItem(DIAL_SOUND_STORE, dialSoundOn ? '1' : '0'); } catch (_) {}
-    muteBtn.classList.toggle('active', dialSoundOn);
-    muteBtn.textContent = dialSoundOn ? '🔊' : '🔇';
+  swatches.forEach((s) => {
+    s.addEventListener('click', () => snapToIdx(Number(s.getAttribute('data-swatch-idx'))));
   });
   resetBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     playDialTick();
     dialActiveIdx = -1;
-    hubName.textContent = '极简';
-    resetBtn.classList.add('active');
+    paintDialInfo(-1);
     applyThemeMode('off');
-    if (!isBusy()) say('已恢复原生极简风', 1400);
   });
 
-  pop.__syncFromTheme = () => {
+  bd.__syncFromTheme = () => {
     const cur = readThemeMode();
     const idx = DIAL_THEMES.findIndex((x) => x.id === cur);
     if (idx >= 0) {
       dialActiveIdx = -1;
-      resetBtn.classList.remove('active');
       setDialAngle(-idx * step, false, true);
-      hubName.textContent = DIAL_THEMES[idx].short;
+      paintDialInfo(idx);
     } else {
       dialActiveIdx = -1;
-      hubName.textContent = '极简';
-      resetBtn.classList.add('active');
+      paintDialInfo(-1);
     }
+    syncControlsUI();
+    renderControlCenterUpdateTab();
   };
 
   if (!window.__AGY_DIAL_GLOBAL_BOUND__) {
     window.__AGY_DIAL_GLOBAL_BOUND__ = true;
-    document.addEventListener('pointerdown', (e) => {
-      if (e.target instanceof Element && e.target.closest('#agy-theme-dial-pop, #agy-inline-theme-btn')) return;
-      closeThemeDial();
-    }, true);
     document.addEventListener('keydown', (e) => {
-      const p = document.getElementById('agy-theme-dial-pop');
-      if (!p || !p.classList.contains('open')) return;
+      const modalBd = document.getElementById('agy-cc-backdrop');
+      if (!modalBd || !modalBd.classList.contains('open')) return;
       if (e.key === 'Escape') { closeThemeDial(); e.preventDefault(); }
-      else if (e.key === 'ArrowRight') { stepDial(1); e.preventDefault(); }
-      else if (e.key === 'ArrowLeft') { stepDial(-1); e.preventDefault(); }
     }, true);
   }
-  return pop;
+  moveNavInd(true);
+  return bd;
 }
 
-function toggleThemeDial(anchorBtn) {
-  const pop = ensureThemeDialPop();
-  if (pop.classList.contains('open')) {
+function toggleThemeDial() {
+  const bd = ensureThemeDialPop();
+  if (bd.classList.contains('open')) {
     closeThemeDial();
     return;
   }
-  pop.__syncFromTheme();
-  const r = anchorBtn.getBoundingClientRect();
-  const left = Math.max(10, Math.min(window.innerWidth - 216, r.left - 24));
-  const top = Math.max(38, r.bottom + 8);
-  pop.style.left = Math.round(left) + 'px';
-  pop.style.top = Math.round(top) + 'px';
-  pop.classList.add('open');
+  bd.__syncFromTheme();
+  if (bd.__moveNavInd) bd.__moveNavInd(true);
+  bd.classList.add('open');
 }
 
 function mountCodexRingAndTopTheme() {
@@ -2465,11 +3325,12 @@ function mountCodexRingAndTopTheme() {
       if (ctxBtn.parentElement !== anchor.parentElement || ctxBtn.nextElementSibling !== anchor) {
         anchor.parentElement.insertBefore(ctxBtn, anchor);
       }
+      ctxBtn.style.display = kitPrefs.pulse ? '' : 'none';
       if (window.__agyLastTelemetry) updateTelemetryUI(window.__agyLastTelemetry);
     }
   }
 
-  // 2. Mount Topbar Theme Switcher Pill
+  // 2. Mount Topbar Unified Control Center Pill
   const titleMenuBar = document.querySelector('[data-testid="title-menu-bar"]');
   if (titleMenuBar) {
     let btn = document.getElementById('agy-inline-theme-btn');
@@ -2478,8 +3339,11 @@ function mountCodexRingAndTopTheme() {
       btn.id = 'agy-inline-theme-btn';
       btn.type = 'button';
       btn.className = 'notranslate';
-      btn.title = '打开实体主题转盘（支持拖转 / 滚轮 / 点击切换 6 套主题）';
-      btn.innerHTML = '<span class="agy-tb-dot"></span><span class="agy-tb-label">Google</span>';
+      btn.title = '打开主题与套件控制中心（外观转盘 / 模块开关 / 性能分档 / 版本更新）';
+      btn.innerHTML =
+        '<span class="agy-tb-dot"></span>' +
+        '<span class="agy-tb-label">Google</span>' +
+        '<span class="agy-tb-ico"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><circle cx="9" cy="8" r="2" fill="currentColor"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="16" r="2" fill="currentColor"/></svg></span>';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleThemeDial(btn);
@@ -2489,6 +3353,7 @@ function mountCodexRingAndTopTheme() {
       titleMenuBar.appendChild(btn);
     }
     applyThemeMode(readThemeMode());
+    syncUpdateBadgeUI();
   }
 
   // 3. Enhance native Model Selector button inside composer
@@ -3704,7 +4569,7 @@ function enhanceModelTriggerButton(composer) {
   if (!btn.__agyModelBound) {
     btn.__agyModelBound = true;
     btn.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || Date.now() < mpState.rawBypassUntil) return;
+      if (!kitPrefs.modelPicker || e.button !== 0 || Date.now() < mpState.rawBypassUntil) return;
       if (mpState.open) {
         closeModelPicker(true);
         return;
@@ -3712,7 +4577,7 @@ function enhanceModelTriggerButton(composer) {
       armZeroFrameModelCapture(btn);
     }, true);
     btn.addEventListener('click', () => {
-      if (Date.now() < mpState.rawBypassUntil || mpState.open) return;
+      if (!kitPrefs.modelPicker || Date.now() < mpState.rawBypassUntil || mpState.open) return;
       const root = findNativeModelRoot();
       if (root) attachModelPickerFromRoot(root, btn);
     }, true);
@@ -3902,7 +4767,7 @@ function bindLocalFileContextMenu() {
   // Pre-resolve artifact cards on right-button press (~80-150ms before contextmenu fires)
   // so non-artifact cards are NEVER falsely intercepted!
   document.addEventListener('mousedown', (event) => {
-    if (event.button !== 2) return;
+    if (!kitPrefs.fileCtx || event.button !== 2) return;
     if (!normalizeTelemetryPort(window.__agyTelemetryPort)) return;
     const info = detectFileContextTarget(event.target);
     if (info && info.artifactTitle && !info.path) {
@@ -3912,6 +4777,7 @@ function bindLocalFileContextMenu() {
 
   document.addEventListener('contextmenu', (event) => {
     closeFileCtxMenu();
+    if (!kitPrefs.fileCtx) return;
     if (!normalizeTelemetryPort(window.__agyTelemetryPort)) return; // Let Electron native fallback handle it
     const info = detectFileContextTarget(event.target);
     if (!info) return;
@@ -3984,6 +4850,17 @@ function syncBrowserHoleAttr() {
   }
 }
 
+let museSettleTimer = 0;
+function scheduleMuseRelayout() {
+  layoutMuseStage();
+  if (museSettleTimer) window.clearTimeout(museSettleTimer);
+  // Catch final position after sidebar / side-pane CSS width transitions finish
+  museSettleTimer = window.setTimeout(() => {
+    museSettleTimer = 0;
+    layoutMuseStage();
+  }, 260);
+}
+
 function bindComposerResizeObserver(composer) {
   if (!composer || composer === observedComposerEl) return;
   observedComposerEl = composer;
@@ -3991,12 +4868,17 @@ function bindComposerResizeObserver(composer) {
     try { composerResizeObs.disconnect(); } catch (_) {}
   }
   if (typeof ResizeObserver !== 'undefined') {
-    composerResizeObs = new ResizeObserver(() => {
-      layoutMuseStage();
-    });
+    composerResizeObs = new ResizeObserver(scheduleMuseRelayout);
     composerResizeObs.observe(composer);
+    const mainEl = composer.closest('main');
+    if (mainEl) composerResizeObs.observe(mainEl);
+    if (composer.parentElement && composer.parentElement !== mainEl) {
+      composerResizeObs.observe(composer.parentElement);
+    }
+    const navEl = document.querySelector('div[role="navigation"]');
+    if (navEl) composerResizeObs.observe(navEl);
   }
-  layoutMuseStage();
+  scheduleMuseRelayout();
 }
 
 function ensureObserver() {
@@ -4040,7 +4922,7 @@ function ensureObserver() {
     darkObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
 
-  const ownControls = '#hakimi-muse-stage, #hakimi-say, #agy-inline-theme-btn, #agy-theme-dial-pop, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-file-ctx-menu, #agy-model-picker';
+  const ownControls = '#hakimi-muse-stage, #hakimi-say, #agy-inline-theme-btn, #agy-theme-dial-pop, #agy-cc-backdrop, #agy-cc-modal, #agy-codex-ctx-btn, #agy-codex-ctx-popover, #agy-pulse-drawer, #agy-file-ctx-menu, #agy-model-picker';
   const streamSkipSel = '.markdown-body, pre, code, [data-testid="planner-response-text"], .monaco-editor, .cm-content';
   const observer = new MutationObserver((mutations) => {
     let hostChanged = false;
@@ -4084,11 +4966,12 @@ window.__AGY_THEME__ = {
   set: (m) => applyThemeMode(m),
   get: () => readThemeMode(),
   list: () => ['google', 'claude', 'nebula', 'everforest', 'kanagawa', 'bauhaus', 'off'],
-  openDial: () => {
-    const b = document.getElementById('agy-inline-theme-btn');
-    if (b) toggleThemeDial(b);
-  },
+  openDial: () => toggleThemeDial(),
+  openCenter: () => toggleThemeDial(),
   openPulse: () => togglePulseSidePanel(),
+  getPrefs: () => Object.assign({}, kitPrefs),
+  setPrefs: (p) => saveKitPrefs(p),
+  checkUpdate: (force) => checkKitUpdate(!!force),
 };
 
 window.__AGY_I18N__ = {
@@ -4103,7 +4986,9 @@ window.__AGY_I18N__ = {
 };
 
 applyThemeMode(readThemeMode());
+applyKitPrefs();
 window.setTimeout(() => { lastTitleBarKey = ''; syncTitleBarOverlay(readThemeMode()); }, 800);
+window.setTimeout(() => { void checkKitUpdate(false); }, 3200);
 scan(document.body);
 ensureObserver();
 mountCodexRingAndTopTheme();

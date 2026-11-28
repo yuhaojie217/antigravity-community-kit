@@ -1,12 +1,37 @@
 # Antigravity Community UI & Plugin Kit
 
-> **一句话总结**：这是一个面向社区的 **Google Antigravity 桌面端界面美化与效率增强参考套件**——在不破坏官方安装包的前提下，为 Antigravity 补齐 **6 格实体指针主题转盘（6 套亮/暗美术皮肤 + 顶栏实时同步）、28 帧全动作随主题换装进度搭子、0 帧替换的 Codex 风格分类模型选择器与全档位思考滑条、交付文件/Artifact 卡片右键直达本地文件夹、全量简体中文界面、以及低开销 512K 上下文与官方配额看板**，支持一键安装与一键无损还原。
+> **一句话总结**：这是一个面向社区的 **Google Antigravity 桌面端界面美化与效率增强参考套件（v2.0.0 正式版）**——在不破坏官方安装包的前提下，提供 **苹果风四栏统一控制中心（内置 6 格实体指针主题转盘、完整主题 / 仅边框作用域兼容壁纸插件、全模块独立开关、一键低配省电与 12h 静默更新红点）、三档桌边搭子（无哈基米 / 静态 28 帧主题换装 / 15–16fps RIFE 补帧丝滑「动态本尊」与原版 Live2D 敲键盘眨眼）、0 帧替换 Codex 分类模型选择器、交付文件右键直达本地文件夹、全量简体中文界面、以及低开销 512K 上下文与官方配额看板**，支持一键安装与一键无损还原。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)](#快速开始windows)
 [![Zero External Dependencies](https://img.shields.io/badge/Runtime%20Deps-Zero-16a34a.svg)](#目录结构)
-[![Release](https://img.shields.io/badge/Release-v1.2.0-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
+[![Release](https://img.shields.io/badge/Release-v2.0.0-1a73e8.svg)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
 [![GitHub Downloads](https://img.shields.io/github/downloads/yuhaojie217/antigravity-community-kit/total?label=Downloads&color=16a34a)](https://github.com/yuhaojie217/antigravity-community-kit/releases)
+
+> 💬 **社区交流与反馈 QQ 群**：**`1137980225`**（平时 GitHub Issue / 评论区反馈可能回复不够及时，欢迎进群一起聊哈基米日常用法、提交主题包反馈与脑洞建议！）
+
+---
+
+## v2.0.0 正式版核心亮点
+
+1. **苹果风四栏统一控制中心（收束独立转盘，联合精修零卡顿微动效）**
+   - 顶部主题胶囊作为唯一入口，点击即开四栏面板（**主题外观 / 功能模块 / 性能动效 / 关于更新**），不改动左下角原生设置热区；
+   - **样式作用域切换（`完整主题` / `仅边框`）**：开启「仅边框」即可与自定义背景/壁纸插件和平共处，只保留呼吸流光边框与控件增强；
+   - **全模块自由开关 + 一键低配省电**：汉化、模型选择器、文件右键增强、Gemini Pulse 看板均可独立启停，性能页支持关闭动效与一键省电；
+   - **12 小时静默检查更新**：发现 GitHub 新 Release 时顶栏胶囊亮起轻量小红点，点击面板内一键直达发布页。
+2. **三档桌边小人模式 · 新增 15–16fps 丝滑「动态本尊」（浏览器原生 Animated WebP，0 JS 切帧）**
+   - **`无哈基米`**：极致纯粹零占用；
+   - **`静态换装`**：经典 4 套 28 帧轻量 WebP 衣橱，随主题自动换装；
+   - **`动态本尊`（v2.0.0 重磅新增）**：回归原版正面半身趴边黄金站位，4 套高帧率丝滑原生 Animated WebP（总计仅 `1.8 MB`，严格懒加载）：
+     - 待机：温柔左右晃脑袋 + 自然眨眼 + 猫耳微动（48 帧 @ 15fps）；
+     - 思考：正面伏案双手托腮轻晃 + 右上角小思考泡泡缓缓上升（48 帧 @ 15fps）；
+     - 敲码：基于原版 `muse-laptop1` 的 Live2D 式局部动画——零悬空手零抖动，仅手部哒哒哒敲键盘 + 屏幕微蓝反光 + 自然眨眼（48 帧 @ 16fps，仅 93 KB）；
+     - 完成：原神派蒙风单眼 Wink + 比耶 ✌️（36 帧 @ 15fps）。
+3. **关键 Bug 修复与界面降噪**
+   - 修复设置弹窗「字体族 / 字号」下拉框被模态层压住无法展开的问题；
+   - 修复桌边小人图层偶尔盖住「模型与用量」弹层的问题；
+   - 修复开关左右侧边栏时小人水平漂移的问题；
+   - 清理 Gemini Pulse 侧边看板里多余的灰色胶囊标签，界面更克制清爽。
 
 ---
 
