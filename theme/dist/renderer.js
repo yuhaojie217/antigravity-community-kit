@@ -2926,11 +2926,11 @@ function ensureThemeDialPop() {
           '<!-- Tab 2: Modules -->' +
           '<div class="agy-cc-pane" data-cc-pane="modules">' +
             '<div class="agy-cc-group" style="padding:11px 14px">' +
-              '<div class="agy-cc-rl" style="margin-bottom:9px"><span class="agy-cc-rt">桌边小人模式（氖基米）</span><span class="agy-cc-rs">静态换装含 4 套主题衣橱；动态本尊启用原版 24fps 补帧动画（摇头眨眼 / 托腮思考 / 敲电脑 / Wink 比耶）</span></div>' +
+              '<div class="agy-cc-rl" style="margin-bottom:9px"><span class="agy-cc-rt">桌边小人模式（氖基米）</span><span class="agy-cc-rs">静态换装含 4 套主题衣橱；动态基米启用原版补帧动画（摇头眨眼 / 托腮思考 / 敲电脑 / Wink 比耶）</span></div>' +
               '<div class="agy-cc-seg full" data-seg="museMode">' +
                 '<button type="button" data-val="off">无哈基米</button>' +
                 '<button type="button" data-val="static">静态换装</button>' +
-                '<button type="button" data-val="dynamic">动态本尊</button>' +
+                '<button type="button" data-val="dynamic">动态基米</button>' +
               '</div>' +
             '</div>' +
             '<div class="agy-cc-group">' +
